@@ -152,6 +152,7 @@ We have just extended Scala lists! Scalaz uses this pattern to provide a succinc
 
 The core Pimps of Scalaz are [Identity](https://github.com/scalaz/scalaz/blob/master/core/src/main/scala/scalaz/Identity.scala), [MA](https://github.com/scalaz/scalaz/blob/master/core/src/main/scala/scalaz/MA.scala) and [MAB](https://github.com/scalaz/scalaz/blob/master/core/src/main/scala/scalaz/MAB.scala). At first these names  may seem somewhat non-sensical but once you know what they do it makes a bit more sense. `Identity` applies to all Scala types, `MA` to all types `M` parameterized by one type `A` and `MAB` to all types `M` parameterized by types `A` and `B` (remember these are not concrete types but type variables). It may also sound like these pimps are typeclasses but this is not the case. It is true that each of them do define some behavior common to all types but they are just highly general pimps (unlike the one we defined above that only works on lists). Remember, the pimps give us a convenient way to do this. In fact they include behavior from several typeclasses and are able to do so using implicits. Earlier I said typeclasses are defined using traits and the type system. This does not mean all traits that are polymorphic are typeclasses. Some of what is in these pimps are also convenience methods or notation. For example, `|>` is defined in `Identity` as, 
 
+	// https://github.com/scalaz/scalaz/blob/master/core/src/main/scala/scalaz/Identity.scala
 	def |>[B](f: A => B): B = f(value)
 
 This function takes a function from `A => B` and calls it on the instance of `A` that `Identity` wraps, returning the resulting `B`.
@@ -159,8 +160,8 @@ This function takes a function from `A => B` and calls it on the instance of `A`
 
 Let's jump back to the `Equal` typeclass and see how Scalaz gives us the convenient `===` operator via `Identity`.
 
-   // https://github.com/scalaz/scalaz/blob/master/core/src/main/scala/scalaz/Identity.scala
-  	def ===(a: A)(implicit e: Equal[A]): Boolean = e equal (value, a)
+	// https://github.com/scalaz/scalaz/blob/master/core/src/main/scala/scalaz/Identity.scala
+	def ===(a: A)(implicit e: Equal[A]): Boolean = e equal (value, a)
 
 Note: Once again, the intention is not to discuss the implementation details of Scalaz at length. How `Equal` and the implicits are in scope is a path I encourage you to explore, but it wont be covered here.
 
@@ -170,7 +171,7 @@ With all of that in mind we have a pretty clear picture of what Scala typeclasse
 
 ## Purely Functional Data Structures
 
-Scalaz also says it gives us purely functional datastructes.<sup>4</sup> How do purely functional datastructures differ from the imperitave ones? We can derive the definition by thinking about the how programs written to a functional programming contract are pure along with our knowledge of Scala. 
+Scalaz also says it gives us purely functional datastructes.<sup>4</sup> How do purely functional data structures differ from the imperitave ones? We can derive the definition by thinking about how programs written to a functional programming contract are pure along with our knowledge of Scala. 
 
 Functional programming requires us to program without side-effects. We won't dive into the depths of discussing why functional programming but lets talk about side-effects since its pertinent to the discussion of functional data structures. We're all familiar with side-effects like reading and writing to a database, or printing text to the console. Mututating objects (changing the value's of their fields) are side-effects too. Since we can't use side-effects in programs written to the functional contract we can't mutate objects in our functions. This is the first pillar of functional data structures. We cannot perform *destructive updates* (cause side-effects) on them. 
 
@@ -216,7 +217,7 @@ Scalaz data structures obide by these rules. Many of them are very useful and we
 
 ## Scalaz and the Unicodes
 
-One important thing to note about Scalaz is it does make heavy use of unicode. For example there is an alias for `===`, `≟`. If you go perusing the code yourself you will noticed many more. I have found that for the most part each unicode operator has an ascii equivalent. If you follow the definitions you will find the ascii version and the non-operator function name as well. I will use the ascii operators mainly because they are still very nice and I don't know how to type many of the unicode equivalents. Also, I find some of the unicode operators like `≟` a bit hard to read (its an equals sign if a question mark on top if you are having a hard time too). 
+One important thing to note about Scalaz is it does make heavy use of unicode. For example there is an alias for `===`, `≟`. If you go perusing the code yourself you will notice many more. I have found that for the most part each unicode operator has an ascii equivalent. If you follow the definitions you will find the ascii version and the non-operator function name as well. I will use the ascii operators mainly because they are still very nice and I don't know how to type many of the unicode equivalents. Also, I find some of the unicode operators like `≟` a bit hard to read (its an equals sign if a question mark on top if you are having a hard time too). 
 
 
 <sup>1</sup> Category theory will be covered in this tutorial, however the primary focus is code not mathematics.
