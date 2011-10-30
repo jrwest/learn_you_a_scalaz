@@ -146,15 +146,27 @@ With the implicit in scope we can now call our method on a list.
 	scala> List(1, 2, 3).fortyTwo
 	java.lang.IndexOutOfBoundsException: 41
 
-We have just extended Scala lists! Scalaz uses this pattern to provide a succinct way of using typeclasses 
+We have just extended Scala lists! Scalaz uses this pattern to provide a succinct way of using typeclasses.
 
 ### Identity, MA, MAB
 
-// how implicits play into type classes, these pimpz are not typeclasses but several type classes, Identity does include
-// some methods that apply to all types however, same with MA, MAB
+The core Pimps of Scalaz are [Identity](https://github.com/scalaz/scalaz/blob/master/core/src/main/scala/scalaz/Identity.scala), [MA](https://github.com/scalaz/scalaz/blob/master/core/src/main/scala/scalaz/MA.scala) and [MAB](https://github.com/scalaz/scalaz/blob/master/core/src/main/scala/scalaz/MAB.scala). At first these names  may seem somewhat non-sensical but once you know what they do it makes a bit more sense. `Identity` applies to all Scala types, `MA` to all types `M` parameterized by one type `A` and `MAB` to all types `M` parameterized by types `A` and `B` (remember these are not concrete types but type variables). It may also sound like these pimps are typeclasses but this is not the case. It is true that each of them do define some behavior common to all types but they are just highly general pimps (unlike the one we defined above that only works on lists). Remember, the pimps give us a convenient way to do this. In fact they include behavior from several typeclasses and are able to do so using implicits. Earlier I said typeclasses are defined using traits and the type system. This does not mean all traits that are polymorphic are typeclasses. Some of what is in these pimps are also convenience methods or notation. For example, `|>` is defined in `Identity` as, 
 
+	def |>[B](f: A => B): B = f(value)
+
+This function takes a function from `A => B` and calls it on the instance of `A` that `Identity` wraps, returning the resulting `B`.
 ### Back to the Equal Typeclass
 
+Let's jump back to the `Equal` typeclass and see how Scalaz gives us the convenient `===` operator via `Identity`.
+
+   // https://github.com/scalaz/scalaz/blob/master/core/src/main/scala/scalaz/Identity.scala
+  	def ===(a: A)(implicit e: Equal[A]): Boolean = e equal (value, a)
+
+Note: Once again, the intention is not to discuss the implementation details of Scalaz at length. How `Equal` and the implicits are in scope is a path I encourage you to explore, but it wont be covered here.
+
+The defintion of `===` has two argument lists, the second of which is implicit. Scala allows us to do this so that we can define more convenient to use functions. In the case of this defintion we can call `===` on any type `A` (`A` will first be implicitly converted to an `Identity[A]`) for any `A` which has a corresponding `Equal[A]` defined. This only works if both the implicit conversion from `A` to `Identity[A]` and an implicit `Equal[A]` are in scope. This is why the methods defined in `Identity`, `MA` and `MAB` don't always apply to all of the types the pimps encompass. If we don't have a `Equal[A]` for our `A` then it is not a member of the `Equal` typeclass and we can't use the `===` behavior on it.
+
+With all of that in mind we have a pretty clear picture of what Scala typeclasses look like. They are representing using polymorphic traits and the scala type system. We provide convenient access to the behaviors they define on certain types using pimps and implicits.
 
 ## FP Datastructures
 
