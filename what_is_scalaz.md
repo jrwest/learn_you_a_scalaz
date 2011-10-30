@@ -168,15 +168,61 @@ The defintion of `===` has two argument lists, the second of which is implicit. 
 
 With all of that in mind we have a pretty clear picture of what Scala typeclasses look like. They are representing using polymorphic traits and the scala type system. We provide convenient access to the behaviors they define on certain types using pimps and implicits.
 
-## FP Datastructures
+## Purely Functional Data Structures
 
-## Some other notes
+Scalaz also says it gives us purely functional datastructes. How do purely functional datastructures differ from the imperitave ones? We can derive the definition by thinking about the how programs written to a functional programming contract are pure along with our knowledge of Scala. 
 
-// that unicode shit
+Functional programming requires us to program without side-effects. We won't dive into the depths of discussing why functional programming but lets talk about side-effects since its pertinent to the discussion of functional data structures. We're all familiar with side-effects like reading and writing to a database, or printing text to the console. Mututating objects (changing the value's of their fields) are side-effects too. Since we can't use side-effects in programs written to the functional contract we can't mutate objects in our functions. This is the first pillar of functional data structures. We cannot perform *destructive updates* (cause side-effects) on them. 
+
+We are familiar with some data structures like this already in Scala. `scala.collection.immutable.List` is a data structure that we cannot mutate. Once we have an instance of `List` that's it. We know from using Scala however that we can get new lists from our lists, however. And thats just it! We get NEW instances of our data structures instead of mutating them. Let's start with a list of 3 `Int`s
+
+	scala> val a = List(1, 2, 3)
+	a: List[Int] = List(1, 2, 3)
+
+When he add an element to the head of the list and assign it to a new variable we do not change the original list as we know. We can also add a different element to the head of our list that `a` points to and not affect the first.
+
+	scala> val b = 1 :: a
+	b: List[Int] = List(1, 1, 2, 3)
+
+	scala> a
+	res0: List[Int] = List(1, 2, 3)
+
+	scala> b
+	res1: List[Int] = List(1, 1, 2, 3)
+
+	scala> val c = 2 :: a
+	c: List[Int] = List(2, 1, 2, 3)
+
+	scala> b
+	res4: List[Int] = List(1, 1, 2, 3)
+
+	scala> c
+	res5: List[Int] = List(2, 1, 2, 3)
+
+We can also return how we built `b` and `c` from `a` using the `tail` method and show that their tails are equal.
+
+	scala> b.tail
+	res6: List[Int] = List(1, 2, 3)
+
+	scala> c.tail
+	res7: List[Int] = List(1, 2, 3)
+
+	scala> b.tail == c.tail
+	res9: Boolean = true
+
+This brings us to the second pillar of functional data structures. They are *persistent*. This means that when we get a new instance of a functional data structure that has a transformation applied to it (like adding a number to a `List[Int]`) the old one is still around for us to use. With imperative data structures this is normally not the case. With a mutable map, if we change the value of a key that's it, the old value is gone.
+
+Scalaz data structures obide by these rules. Many of them are very useful and we will cover them as we move through this tutorial. 
+
+## Scalaz and the Unicodes
+
+One important thing to note about Scalaz is it does make heavy use of unicode. For example there is an alias for `===`, `≟`. If you go perusing the code yourself you will noticed many more. I have found that for the most part each unicode operator has an ascii equivalent. If you follow the definitions you will find the ascii version and the non-operator function name as well. I will use the ascii operators mainly because they are still very nice and I don't know how to type many of the unicode equivalents. Also, I find some of the unicode operators like `≟` a bit hard to read (its an equals sign if a question mark on top if you are having a hard time too). 
 
 
 <super>1</super> Category theory will be covered in this tutorial, however the primary focus is code not mathematics.
 <super>2</super> How `==` is defined is actually a bit more complicated than just that one method but thats a topic that will be covered in detail in your Scala book. 
 <super>3</super> Of course, the GOF give us lots of patterns to make our OOP code better but they don't help us clean up everything.
+
+functional datastructures reference: http://www.cs.cmu.edu/~rwh/theses/okasaki.pdf
 
  
