@@ -10,7 +10,7 @@ There are several versions of Scalaz out in the wild. We will be discussing Scal
 
 In order to follow along you will need Scala installed on your machine, as well as [SBT](https://github.com/harrah/xsbt/wiki). All examples will be tested against Scala 2.9.1. The SBT version I am using is 0.11.0. 
 
-If you clone the Scalaz6 [repository](https://github.com/scalaz/scalaz) you can use SBT and the Scala REPL a convenient way to play with the library. After you clone it, change into the project's base directory in your terminal and boot up SBT.
+If you clone the Scalaz6 [repository](https://github.com/scalaz/scalaz) you can use SBT and the Scala REPL as a convenient way to play with the library. After you clone it, change into the project's base directory in your terminal and boot up SBT.
 
 	$ cd path/to/scalaz
 	$ sbt
@@ -55,7 +55,7 @@ Your probably familiar with how to apply a function to an `Option[A]` if it is n
 	scala> (none : Option[Int]) map { _ + 1 }
 	res3: Option[Int] = None
 
-You may have noticed I'm using lowercase versions of `Some` and `None`. This is something Scalaz gives us. The problem with using `Some` and `None` is they return instances of that type. Sometimes this can mess with the Scala compiler and implicits when it expects an `Option[A]`. Instead `some` and `none`, the lower-case alternatives are defined with a the more general result type `Option[A]`.
+You may have noticed I'm using lowercase versions of `Some` and `None`. This is something Scalaz gives us. The problem with using `Some` and `None` is they return instances of that type. Sometimes this can mess with the Scala compiler and implicits when it expects an `Option[A]`. Instead `some` and `none`, the lower-case alternatives are defined with the more general result type `Option[A]`.
 
 	def some[A](a: A): Option[A] = Some(a)
 	def none[A]: Option[A] = None
