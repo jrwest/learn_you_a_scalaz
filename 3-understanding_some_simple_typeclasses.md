@@ -156,7 +156,7 @@ The first rule you need to follow to be part of the semigroup typeclass is that 
 
 	For all instances a, b of type A, append(a, b) gives us another A.
 
-So if I append an `Int` and an `Int` or a `String` and `String` I get an `Int` or `String` repsepectively. This is called *closure*. Can I append two `Option`s? Well, we will talk about that in a moment. Lets just try 'em all first! 
+So if I append an `Int` and an `Int` or a `String` and `String` I get an `Int` or `String` respectively. This is called *closure*. Can I append two `Option`s? Well, we will talk about that in a moment. Lets just try 'em all first! 
 
 In Scalaz, you can call append on an instance of a type that is a member of `Semigroup` giving it another instance using `|+|`. 
 
@@ -189,7 +189,7 @@ Let's see if that works for `Option`s.
 
 // TODO: that's only one case prove with scalacheck/specs2?
 
-Ok, so we've appened two `Option`s, got back an `Option` and proven that *associativity* holds as well. This is why `Option` is a member of `Semigroup` and we can use `|+|` with any instance of that type.
+Ok, so we've appended two `Option`s, got back an `Option` and proven that *associativity* holds as well. This is why `Option` is a member of `Semigroup` and we can use `|+|` with any instance of that type.
 
 But wait, there's more! `Option` is not always a member of `Semigroup`. I know, I know, I just said it was a member and it is, *as long as its type parameter is a member of `Semigroup`*. Here's the code that enforces that rule:
 
