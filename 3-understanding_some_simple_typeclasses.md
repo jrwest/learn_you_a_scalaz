@@ -36,7 +36,7 @@ If we try to call `===` on one of our own types however we will get an error. We
 	<console>:15: error: could not find implicit value for parameter e: scalaz.Equal[MyClass]
               (new MyClass(1)) === (new MyClass(1))
 
-So, if we wan't to make our class a member of the `Equal` typeclass we need to do two things. First we need a definition of `Equal[MyClass]` and second we need the implicit conversion. We can do this all at once thanks how Scalaz defines its own members of the `Equal` typeclass.
+So, if we want to make our class a member of the `Equal` typeclass we need to do two things. First we need a definition of `Equal[MyClass]` and second we need the implicit conversion. We can do this all at once thanks how Scalaz defines its own members of the `Equal` typeclass.
 
 	scala> object MyEqualsMembers extends scalaz.Equals {
 	     | implicit def MyClassEqual: Equal[MyClass] = equalA
@@ -156,14 +156,14 @@ The first rule you need to follow to be part of the semigroup typeclass is that 
 
 	For all instances a, b of type A, append(a, b) gives us another A.
 
-So if I append an `Int` and an `Int` or a `String` and `String` I get an `Int` or `String` repsepectively. This is called *closure*. Can I append two `Option`s? Well, we will talk about that in a moment. Lets just try 'em all first! 
+So if I append an `Int` and an `Int` or a `String` and `String` I get an `Int` or `String` respectively. This is called *closure*. Can I append two `Option`s? Well, we will talk about that in a moment. Lets just try 'em all first! 
 
 In Scalaz, you can call append on an instance of a type that is a member of `Semigroup` giving it another instance using `|+|`. 
 
-	scala> Option(1) |+| Option(2)
+	scala> 1.some |+| 2.some
 	res22: Option[Int] = Some(3)
 
-	scala> Option(1) |+| none
+	scala> 1.some |+| none
 	res23: Option[Int] = Some(1)
 
 	scala> 1 |+| 1
@@ -184,12 +184,12 @@ The second rule you need to be a member of `Semigroup` is called *associativity*
 
 Let's see if that works for `Option`s.
 
-	scala> ((some(1) |+| some(2)) |+| some(3)) === (some(1) |+| (some(2) |+| some(3)))
+	scala> ((1.some |+| 2.some) |+| 3.some) === (1.some |+| (2.some |+| 3.some))
 	res35: Boolean = true
 
 // TODO: that's only one case prove with scalacheck/specs2?
 
-Ok, so we've appened two `Option`s, got back an `Option` and proven that *associativity* holds as well. This is why `Option` is a member of `Semigroup` and we can use `|+|` with any instance of that type.
+Ok, so we've appended two `Option`s, got back an `Option` and proven that *associativity* holds as well. This is why `Option` is a member of `Semigroup` and we can use `|+|` with any instance of that type.
 
 But wait, there's more! `Option` is not always a member of `Semigroup`. I know, I know, I just said it was a member and it is, *as long as its type parameter is a member of `Semigroup`*. Here's the code that enforces that rule:
 
@@ -226,7 +226,7 @@ You can append many other types inlcuding `List`, `Boolean`, `Tuple2`and `Either
 	scala> List(MyClass(1), MyClass(2)) |+| List(MyClass(3))
 	res5: List[MyClass] = List(MyClass(1), MyClass(2), MyClass(3))
 
-We'll talk about tuples soon, but first let's try appending two `Either`s. When we append two `Either`s, we actually are appeneding either its left projection or its right projection. Scala gives use the `left` and `right` methods on `Either` to get these projections. Scalaz also gives us the convience `left` and `right` methods on all types via `Identity`. When we append two `Either.LeftProjection`s if the first operand is `Left` we return it, if not we return the second operand regardless of whether its a `Left` or `Right`. The same holds for `Either.RightProjection` and `Right`.
+We'll talk about tuples soon, but first let's try appending two `Either`s. When we append two `Either`s, we actually are appeneding either its left projection or its right projection. Scala gives us the `left` and `right` methods on `Either` to get these projections. Scalaz also gives us the convience `left` and `right` methods on all types via `Identity`. When we append two `Either.LeftProjection`s if the first operand is `Left` we return it, if not we return the second operand regardless of whether its a `Left` or `Right`. The same holds for `Either.RightProjection` and `Right`.
 
 	scala> 1.left.left |+| 2.left.left
 	res1: Either.LeftProjection[Int,Nothing] = LeftProjection(Left(1))
@@ -248,10 +248,44 @@ We'll talk about tuples soon, but first let's try appending two `Either`s. When 
 
 This is very useful if you have a default `Either` you want to use when another `Either` you have may be of the incorrect projection. 
 
-// return to booleans, || is default operation, using |^| (logical and in pipes) to do &&
-// return to lists, why we can |+| on a List[MyClass]
-// implement MyClass in Semigroup
+Let's get back to the `List` and `Boolean` examples from above, now. You have have noticed a couple things. For one, when we added two instances of `List[MyClass]` we didn't get an error about a missing implicit. This is because `append` for `Semigroup[List]` is not defined in the same fashion as `append` in `Semigroup[Option]`.<sup>2</sup> When you append two lists it doesn't matter their type, `|+|` acts like `:::` from the Scala standard library. 
+
+The second thing you may have noticed is that `|+|` on `Boolean` is the same as `||` and that is the truth. But only a half-one. I've been lying to you a bit up until now (unless you've been checking the footnotes). `Semigroup` is actually a bit more general then I've lead to believe. Actually, its the `append` operation thats more general. In fact, I haven't really defined what `append` is -- except for somewhat letting you believe it meant "to add two things". If you checkout the [Wikipedia on Semigroup] it tells you straight away,
+
+	"a semigroup is an algebraic structure consisting of a set and a binary operation"
+
+The set is all instances of `A`, where `A` is the type parameter given to `Semigroup`. The binary operation is `append`. That's a very general definition. An operation that takes two operands (and must meet those properties from above of course). So this doesn't necessarily mean that `append` means "add". It's only rules are *taking two operands of the same type*, *returning an instance of the same type*, *being a closed operation* and *being associative*. It doesn't have to be addition! The careful reader may have begun to pick up on this in the `Either` example. There was no adding! Actually, `|+|` on `Either` worked more like it did for `Boolean` than it did on `List` or `Option`. 
+
+This leads us to another possible conclusion. Is it possible that a type `A` can be a `Semigroup` under more than one such binary operation? Why, yes it is and `Boolean` is one of them! What other operation might there be? We know `||` is the binary operation `|+|` on `Boolean` uses by default. `&&` is similar. `Boolean` is closed under conjunction, `Boolean && Boolean` always returns `Boolean`, and conjunction is also associative, `((Boolean && Boolean) && Boolean) === (Boolean && (Boolean && Boolean))`. How do we use `&&` with `|+|` instead of `||`? Well, you kind of need to tell it to. Scalaz, defines a type for us called `BooleanConjunction` that is primed and ready for us to use with `|+|`. Actually, all `BooleanConjuction` does is wrap a boolean for conjunctions sake. When we call `|+|` passing it two `BooleanConjunction`s we are actually using the `appened` defined in `Semigroup[BooleanConjunction]` which in turn uses conjunction (of course!). We get a `BooleanConjunction` from a `Boolean` by calling `|∧|` on it. (the `∧` between the pipes is the unicode character `\u2227`, logical-and, not a caret). 
+
+	scala> (true |∧|) |+| (false |∧|)
+	res5: scalaz.BooleanConjunction = false
+
+	// just for reminder's sake
+	scala> true |+| false
+	res6: Boolean = true
+
+We've now seen `Semigroup` and its append do some pretty cool things. It's let us put a lot of things together with like things, we've changed the meaning of "put together" for those things and sometimes they are kind of recursive: when we put together two `Option`s it only worked if the underlying type was a member of `Semigroup` as well. It's not a far reach, especially since I mentioned it earlier, that we can append tuples as well. Tuples, like `Option` require the underlying types to be members of `Semigroup`. Also, since we can only append members of the same set we can append two `(String, Int)`s but not a `(String, Int)` and an `(Int, String)`. 
+
+	scala> (1, 2) |+| (3, 4)
+	res10: (Int, Int) = (4,6)
+
+	scala> (1.some, 2) |+| (3.some, 4)
+	res13: (Option[Int], Int) = (Some(4),6)
+
+	scala> (1.some, 2) |+| (3.some, none)
+			<console>:14: error: too many arguments for method |+|: (a: => (Option[Int], Int))(implicit s: 			scalaz.Semigroup[(Option[Int], Int)])(Option[Int], Int)
+              (1.some, 2) |+| (3.some, none)
+
+
+Scalaz defines tuple members of `Semigroup` for sizes two to four. You can define more if you really want.
+
+// implement our own Semigroup member
+
+// conclusion
 
 
 
 <sup>1</sup> In mathematics, Semigroups are actually a much more general concept. We are talking about their use in Scalaz so we will not cover it that in depth but you may find it interesting to start with the ever so general defintion on [Wikipedia](http://en.wikipedia.org/wiki/Semigroup).
+
+<sup>2</sup> In reality, Scalaz does not define a `Semigroup[List]` for us, but a more general one on things that are traversable. You can get the nitty gritty by reading the [implementation](https://github.com/scalaz/scalaz/blob/master/core/src/main/scala/scalaz/Semigroup.scala).
