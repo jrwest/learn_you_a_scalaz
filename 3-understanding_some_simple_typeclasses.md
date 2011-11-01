@@ -160,10 +160,10 @@ So if I append an `Int` and an `Int` or a `String` and `String` I get an `Int` o
 
 In Scalaz, you can call append on an instance of a type that is a member of `Semigroup` giving it another instance using `|+|`. 
 
-	scala> Option(1) |+| Option(2)
+	scala> 1.some |+| 2.some
 	res22: Option[Int] = Some(3)
 
-	scala> Option(1) |+| none
+	scala> 1.some |+| none
 	res23: Option[Int] = Some(1)
 
 	scala> 1 |+| 1
@@ -184,7 +184,7 @@ The second rule you need to be a member of `Semigroup` is called *associativity*
 
 Let's see if that works for `Option`s.
 
-	scala> ((some(1) |+| some(2)) |+| some(3)) === (some(1) |+| (some(2) |+| some(3)))
+	scala> ((1.some |+| 2.some) |+| 3.some) === (1.some |+| (2.some |+| 3.some))
 	res35: Boolean = true
 
 // TODO: that's only one case prove with scalacheck/specs2?
