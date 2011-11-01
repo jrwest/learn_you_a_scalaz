@@ -36,7 +36,7 @@ If we try to call `===` on one of our own types however we will get an error. We
 	<console>:15: error: could not find implicit value for parameter e: scalaz.Equal[MyClass]
               (new MyClass(1)) === (new MyClass(1))
 
-So, if we wan't to make our class a member of the `Equal` typeclass we need to do two things. First we need a definition of `Equal[MyClass]` and second we need the implicit conversion. We can do this all at once thanks how Scalaz defines its own members of the `Equal` typeclass.
+So, if we want to make our class a member of the `Equal` typeclass we need to do two things. First we need a definition of `Equal[MyClass]` and second we need the implicit conversion. We can do this all at once thanks how Scalaz defines its own members of the `Equal` typeclass.
 
 	scala> object MyEqualsMembers extends scalaz.Equals {
 	     | implicit def MyClassEqual: Equal[MyClass] = equalA
