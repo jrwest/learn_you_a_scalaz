@@ -2,13 +2,13 @@
 
 Now that we have a better understanding of what Scalaz gives us let's explore some of the simpler typeclasses it defines. We'll revist `Equal` and discuss `Show` and `Order`. For flavor, we will also discuss `Semigroup` which is one of those typeclasses that apply to types meeting a couple of mathematical properties. 
 
-As you read through the details of these typeclasses it may seem like some of the behavior they define overlaps with existing features of Scala. It is true that some portions of Scalaz overlap with what is given to us in the standard library. Scala is a very functional language and Scalaz is a purely functional library so this makes sense. Its important to remember that Scalaz and typeclasses are a different way of thinking about your code. Also, we mentioned in the last section Scalaz gives us some functional data structures that don't exist in the standard library. Another thing I hope will continue to become more evident is Scalaz usually gives a more general version of the behavior that we can use on a wider range of types including its own. 
+As you read through the details of these typeclasses it may seem like some of the behavior they define overlaps with existing features of Scala. It's true that some portions of Scalaz overlap with what is given to us in the standard library. Scala is a very functional language as-is and Scalaz is a purely functional library, so that overlap makes sense. It's important to remember that Scalaz and typeclasses represent a different way of thinking about your code. Also, we mentioned in the last section Scalaz gives us some functional data structures that don't exist in the standard library. The biggest idea that I hope will continue to become more evident is that Scalaz usually gives a more general version of a behavior that we can use on a wider range of types.
 
-The topics we will discuss in this section are also foundational topics. They will give us a better understanding of how typeclasses work. Some of them are typeclasses that are used to build other typeclasses. For example, we will talk about `Order` of which all members are also members of `Equal`. The `Monoid` typeclass which we will talk about later is built on top of the `Semigroup` typeclass. 
+The topics we will discuss in this section are also foundational topics. They will give us a better understanding of how typeclasses work. Some of them are typeclasses that are used to build other typeclasses. For example, we will talk about `Order` of which all members are also members of `Equal`. The `Monoid` typeclass which we will talk about later is built on top of the `Semigroup` typeclass.
 
 ## Typing our Safe Equals
 
-Before we talked about `Equal[-A]` to better understand what typeclasses are. Let's revist it one more time briefly and learn some final details about it. To get our hands dirty we will also make our own class a member. We won't always do this when touring different typeclasses but `Equal` is relatively straight-forward and we want typesafe equals for our types as well. 
+Before, we talked about `Equal[-A]` to better understand what typeclasses are. Let's revist it one more time briefly and learn some finer details about it. To get our hands dirty we will also make our own class a member. We won't always do this when touring different typeclasses, but `Equal` is relatively straight-forward and we want typesafe equals for our types as well. 
 
 Members of the `Equal` typeclass includes all of the types you'd expect including `Int`, `Byte`, and `String` as well as ones you may or may not have expected like `xml.NodeSeq`. For a full list take a look at the [definition](https://github.com/scalaz/scalaz/blob/master/core/src/main/scala/scalaz/Equal.scala). As we know this typeclass gives us the `===` operator for all member types. 
 
@@ -51,12 +51,13 @@ So, if we wan't to make our class a member of the `Equal` typeclass we need to d
 
 We'll step through how we went from `error: could not find implicit value for parameter e: scalaz.Equal[MyClass]` to `res9: Boolean = false` in a moment, but first, you may be wondering why false was returned. Under the hood, Scalaz is using the `==` operator given to us by Scala. Since we have not overriden `equals` in our code, `==` is performing reference equality, which is false in this case. If we redefine `MyClass` using a case class, which defines `equals` for us as we'd expect, we get `true`.
 
+	scala> case class MyClass(a: Int)
 	scala> MyClass(1) === MyClass(1)
 	res1: Boolean = true
  
-It makes sense that Scalaz is built using the Scala standard library. At first, though, this can make its benefits hard to see. It's the other part of the story, how Scalaz uses the type system to narrow where the behavior can be used to prevent unintended actions, that ties it all together. In our case, we know all types that are a member of `Equal` by looking at its definition and then adding all types we've added to the typeclass ourself.
+It makes sense that Scalaz uses the built in Scala standard library where it can, but it also makes it hard to understand why Scalaz is useful. Here, Scalaz acts as a utility to go farther than Scala does to prevent unintended actions. In our case, we know all types that are a member of `Equal` by looking at its definition and then adding all types we've added to the typeclass ourself.
 
-Let's get back to how we made `MyClass` a member of `Equal`. Scala & Scalaz did all of the heavy lifting for us. All we did was make an object that extends `scalaz.Equals` that contained this function,
+Let's get back to how we made `MyClass` a member of `Equal`. Scala & Scalaz did all of the heavy lifting for us. All we did was make an object that extends `scalaz.Equals` that contained this function:
 
 	implicit def MyClassEqual: Equal[MyClass] = equalA
 
@@ -67,7 +68,9 @@ The function is named `MyClassEqual`. This is a style choice and you should neve
 
 ## Showing Off
 
-Another simple typeclass to explore while we solidify our understanding is `Show`. A type that is a member of `Show` can be represented as a string (in Scalaz it is a `List[Char]`). Don't we have `toString` from Java and Scala that let's us do this? Like I said, these are foundational typeclasses and many of them are also inspired from Haskell. In Haskell, `Show` is the only equivalent of the familiar `toString`. I'll admit `Show` is probably one of, if not the least interesting of the Scalaz typeclasses, but that also makes it pretty easy to understand. Like `===` and `Equal` we can call `show` on any type for which there is an implicit `Show[A]` defined in scope. If there isn't one we get a compiler error.
+Another simple typeclass to explore while we solidify our understanding is `Show`. A type that is a member of `Show` can be represented as a string (in Scalaz it is a `List[Char]`). Wait, but don't we have `toString` in Java and Scala that lets us do this? Yes, but like many of the others, `Show` is a foundational typeclass inspired from Haskell. In Haskell, `Show` is the only equivalent of the familiar `toString`.
+
+`Show` is probably one of, if not the single least interesting of the Scalaz typeclasses, but that fact also makes it pretty easy to understand. Like `===` and `Equal` we can call `show` on any type for which there is an implicit `Show[A]` defined in scope. If there isn't one we get a compiler error.
 
 	scala> 3.show
 	res0: List[Char] = List(3)
@@ -76,9 +79,9 @@ Another simple typeclass to explore while we solidify our understanding is `Show
 	<console>:16: error: could not find implicit value for parameter s: scalaz.Show[MyClass]
               MyClass(1).show
 
-Like we did previously we could make `MyClass` a member of `Show`. This is an excercise left for the reader.
+Like we did previously with `Equal`, we can easily make `MyClass` part of the `Show` typeclass. I'll leave that as an exercise for you.
 
-One thing that's interesting about `Show` that makes it a bit cooler than `toString` is we can override its definition from the outside. We say how Scalaz defined `===` in `Identity` last section. It's not a big leap to imagine how `show` is defined as well. In case your mind is feeling lazy though, I've pasted it below.
+Even though it's simple, `Show` is still cooler than `toString` because we can override its definition from outside the class we're calling it on. Just like `===` was defined in `Identity` in the last section, `show` is defined similarly:
 
 	def show(implicit s: Show[A]): List[Char] = s.show(value)
 
@@ -100,13 +103,13 @@ If we make `CustomShow` implicit since its defined in a nearer scope we can use 
 	scala> 3.show
 	res5: List[Char] = List(M, y,  , S, h, o, w, :,  , 3)
 
-Now that is pretty cool. We have just modified the behavior of a function without touching its defintion.
- 
+Now that's pretty cool. We modified the behavior of a function without touching its defintion.
+
 ## The Order of Things
 
 Some typeclasses are built on-top of other typeclasses. When we say this we mean a typeclass that adds behavior to a subset of types in another typeclass. `Order` is one such typeclass. All members of `Order` are members of the `Equal` typeclass. This is pretty easy to see from part of its defintion: `trait Order[-A] extends Equal[A]`.
 
-That's cool and all but what is `Order`. Members of the `Order` support a single behavior. `(A, A) => scalaz.Ordering`. Given two instances of type `A`, we return an instance of `scalaz.Ordering`. `scalaz.Ordering` has three pre-defined "constants", `LT`, `EQ`, `GT`. Basically, members of `Order` can be sorted. This sounds a lot like `scala.Ordering` and it is. `Order` is a typeclass, though, and `scala.Ordering` is just a polymorphic trait. In Scalaz, we use `?|?` to get the ordering of two instances of the same type. 
+That's cool and all but what is `Order`. Members of the `Order` typeclass support a single behavior: `(A, A) => scalaz.Ordering`. Given two instances of `A`, we return an instance of `scalaz.Ordering`. `scalaz.Ordering` has three pre-defined "constants", `LT`, `EQ`, `GT`. Basically, members of `Order` can be sorted. Just like before, although `scalaz.Ordering` sounds a lot like `scala.Ordering`, `Order` is a typeclass and `scala.Ordering` is just a polymorphic trait. In Scalaz, we use `?|?` to get the ordering of two instances of the same type. 
 
 	scala> 1 ?|? 2
 	res9: scalaz.Ordering = LT
@@ -139,11 +142,17 @@ Low and behold `scalaz.Ordering` is a member of `Order`. Woah! `scala.Ordering` 
 	scala> (EQ : scalaz.Ordering) === (EQ : scalaz.Ordering)
 	res20: Boolean = true
 
-Lets step back and think about why this simple example makes our code better. We have just been able to reason about what's possible based on some simple properties. The `scalaz.Ordering` type is a member of `Order`. We know (or can easily reason) that it must be a member of `Equal`. It has a small impact in this case but as we continue to use the library that impact will grow. 
+Step back and think about why this simple example makes our code better. We just reasoned about what's possible based on some simple properties. The `scalaz.Ordering` type is a member of `Order`, so we know (or can easily reason) that it must be a member of `Equal`. It has a small impact in this case but as we continue to use the library that impact will grow. 
 
 ## Adding the World (with Semigroups)
 
-Ok so we've gotten our hands a little dirty -- or if your still pimping with Xzhibit, a little greasy -- but now it's time to really dive in and cover our hands in mud. We're going to talk about a cool typeclass, `Semigroup`. I admit, The heading above is hyperbole. Semigroups do not let us add the world. They do let us add together a lot of things, however.<sup>1</sup> Members of `Semigroup` meet two mathematical properties. If a type meets these properties we can *append* two instances of them to get a third instance of the same type. This brings us to the first rule of semigroups:
+Ok so we've gotten our hands a little dirty -- or if your still pimping with Xzhibit, a little greasy -- but now it's time to really dive in and get muddy. We'll talk about a cool typeclass, `Semigroup`. Although the heading above is hyperbole and Semigroups don't really let us add the world, they do let us add a ton of stuff. <sup>1</sup>
+
+Members of `Semigroup` meet two mathematical properties.
+
+### Rule 1: closure
+
+The first rule you need to follow to be part of the semigroup typeclass is that you must be able to *append* two instances of your type and get a third instance of the same type back. This brings us to the first rule of semigroups:
 
 	For all instances a, b of type A, append(a, b) gives us another A.
 
@@ -166,7 +175,10 @@ In Scalaz, you can call append on an instance of a type that is a member of `Sem
 	scala> "hello, " |+| "world"
 	res32: java.lang.String = hello, world
 
-The second rule required to be a member of `Semigroup` is called *associativity*. 
+
+### Rule 2: associativity
+
+The second rule you need to be a member of `Semigroup` is called *associativity*. It adds onto the closure rule by saying that if you append a and b together, and then append the result of that to c, then the result has to be the same as if you append a to the result of appending b and c. This is the exact same associativity rule as you might remember from addition & subtraction in math. Formally, the property looks like this:
 
 	Let a, b, c be any three instances of type A. append is associative on A if append(a, append(b, c)) === append(append(a, b), c)
 
@@ -177,7 +189,9 @@ Let's see if that works for `Option`s.
 
 // TODO: that's only one case prove with scalacheck/specs2?
 
-Ok, so we've appened two `Option`s, got back an `Option` and seen that *associativity* holds as well. This is why `Option` is a member of `Semigroup` and we can use `|+|` with them. I've lied to you a bit up until now, however. `Option` is not always a member of `Semigroup`. I know, I know, I just said it was a member and it is, *as long as its type parameter is a member of `Semigroup`*. We can see this in its definition.
+Ok, so we've appened two `Option`s, got back an `Option` and proven that *associativity* holds as well. This is why `Option` is a member of `Semigroup` and we can use `|+|` with any instance of that type.
+
+But wait, there's more! `Option` is not always a member of `Semigroup`. I know, I know, I just said it was a member and it is, *as long as its type parameter is a member of `Semigroup`*. Here's the code that enforces that rule:
 
 	implicit def OptionSemigroup[A : Semigroup]: Semigroup[Option[A]] = ...
 
@@ -212,7 +226,7 @@ You can append many other types inlcuding `List`, `Boolean`, `Tuple2`and `Either
 	scala> List(MyClass(1), MyClass(2)) |+| List(MyClass(3))
 	res5: List[MyClass] = List(MyClass(1), MyClass(2), MyClass(3))
 
-We'll talk about tuples soon, but first let's try appending two `Either`s. When we append two `Eithers` we actually are appeneding either its left projection or its right projection. Scala gives use the `left` and `right` methods on `Either` to get these projections. Scalaz also gives us the convience `left` and `right` methods on all types via `Identity`. When we append two `Either.LeftProjection`s if the first operand is `Left` we return it, if not we return the second operand irregardless of whether its a `Left` or `Right`. The same holds for `Either.RightProjection` and `Right`.
+We'll talk about tuples soon, but first let's try appending two `Either`s. When we append two `Either`s, we actually are appeneding either its left projection or its right projection. Scala gives use the `left` and `right` methods on `Either` to get these projections. Scalaz also gives us the convience `left` and `right` methods on all types via `Identity`. When we append two `Either.LeftProjection`s if the first operand is `Left` we return it, if not we return the second operand regardless of whether its a `Left` or `Right`. The same holds for `Either.RightProjection` and `Right`.
 
 	scala> 1.left.left |+| 2.left.left
 	res1: Either.LeftProjection[Int,Nothing] = LeftProjection(Left(1))
