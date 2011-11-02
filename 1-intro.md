@@ -1,10 +1,10 @@
 #  All Aboard the Train to Scalaz
 
-Welcome to the world of Scalaz! If you've arrived here maybe you've heard of it? It's a beatiful place full of typeclasses and functional programming paradigms. What are those you ask? Read on and we'll find out together. 
+Welcome to the world of Scalaz! If you've arrived here maybe you've heard of it? It's a beautiful place full of typeclasses and functional programming paradigms. What are those you ask? Read on and we'll find out together. 
 
-I began writing this after re-reading a similar introduction in the great Haskell book of a similar (and original) name, "Learn You a Haskell for Great Good". It is intended to be an introduction to Scalaz for intermediate and above level Scala developers and as a means to improve my own knowledge of the library as well. 
+I began writing this after re-reading a similar introduction in the great Haskell book of a similar (and original) name, "Learn You a Haskell for Great Good". It is intended to be an introduction to Scalaz for intermediate and above level Scala developers and as a mean to improve my own knowledge of the library as well. 
 
-There are several versions of Scalaz out in the wild. We will be discussing Scalaz6 which is the most recent stable release. Scalaz7 has several forks and is still a work in progress. It also a [rewrite](http://code.google.com/p/scalaz/wiki/Scalaz7) of portions of the library so it is safe to assume code used here will not be the same in Scalaz7. 
+There are several versions of Scalaz out in the wild. We will be discussing Scalaz6 which is the most recent stable release. Scalaz7 has several forks and is still a work in progress. It's also a [rewrite](http://code.google.com/p/scalaz/wiki/Scalaz7) of portions of the library so it is safe to assume code used here will not be the same in Scalaz7. 
 
 # What you'll need to get started
 
@@ -43,11 +43,11 @@ Although I have found it easy to use only certain parts of the library where I n
 
 # Before we learn, lets just do some cool stuff
 
-Before we dive into things like typeclasses and purely functional data structures lets just have some fun with Scalaz and see how can use some basic things in our code. 
+Before we dive into things like typeclasses and purely functional data structures lets just have some fun with Scalaz and see how we can use some basic things in our code. 
 
 ## A Useful Way to Work With Options
 
-Your probably familiar with how to apply a function to an `Option[A]` if it is not a `None` and if not return a default value. You use `map` and `getOrElse`. When applied to an Option `map` applies the function if the value exists. 
+You are probably familiar with how to apply a function to an `Option[A]` if it's a `Some`, and if not return a default value. You use `map` and `getOrElse`. When applied to an Option `map` applies the function if the value exists. 
 
 	scala> some(3) map { _ + 1 }
 	res0: Option[Int] = Some(4)
@@ -65,7 +65,7 @@ You can also turn an instance of `A` into an `Option[A]` by calling `some` on it
 	scala> 3.some
 	res11: Option[Int] = Some(3)
 
-The `getOrElse` method returns an instance of `A` on an `Option[A]` and is given to us by the standard library. Put together with map we are able to write expressions like,
+The `getOrElse` method returns an instance of `A` on an `Option[A]` and is given to us by the standard library. Put together with map we are able to write expressions like:
 
 	scala> 3.some map { _ + 1 } getOrElse 2
 	res12: Int = 4
@@ -81,7 +81,7 @@ Scalaz gives us a more expressive way of writing the same expression:
 	scala> none[Int] some { _ + 1 } none { 11 }
 	res16: Int = 11
 
-This statement isn't just more expressive however. It also can help us from doing something we didn't intend. 
+This statement isn't just more expressive however. It also can prevent us from doing something we didn't intend. 
 
 	scala> none[Int] some { _ + 1 } none { "11" }
 	<console>:14: error: type mismatch;
@@ -96,7 +96,7 @@ Where as `getOrElse` may lead to us accidentally returning an unintended type,
 
 ## Checking Two Optional Values at Once
 
-Scalaz also gives us a useful way to check the existence and values of two optional values at once. In the imperative style we would probably use a set of boolean functions combined by boolean operators in an if expression or nested if expressions. That's not to say we can't and don't do this in the functional programming world but in the imperative style we are often talking about `null` handling. In Scala we have the benefit of using the `Option` type instead of `null` and it is verbose and cumbersome to use `option.isDefined` as well as extracting the value in if expressions. A useful way to work with `Option` values is to pattern match on them using `match`. We are familiar with this. But how do we check both exist at the same time. We could use a `(Option[A], Option[B])` but then there are four cases to handle two of which we dont care about. Instead we can use the `<|*|>` operator (I don't know what to call it, spaceship, bar star?) to take an `Option[A]` and an `Option[B]` and get back an `Option[(A, B)])`. If either of the two operands are `None` the resulting value with be `None`. Otherwise, they will be `Some[(A, B)])`. Now, when we pattern match we only have to handle the two cases we care about: when they both exist and otherwise. 
+Scalaz also gives us a useful way to check the existence and values of two optional values at once. In the imperative style we would probably use a set of boolean functions combined by boolean operators in an if expression or nested if expressions. That's not to say we can't and don't do this in the functional programming world but in the imperative style we are often talking about `null` handling. In Scala we have the benefit of using the `Option` type instead of `null` and it is verbose and cumbersome to use `option.isDefined` as well as extracting the value in if expressions. A useful way to work with `Option` values is to pattern match on them using `match`. We are familiar with this. But how do we check both exist at the same time. We could use a `(Option[A], Option[B])` but then there are four cases to handle two of which we dont care about. Instead we can use the `<|*|>` operator (I don't know what to call it, spaceship, bar star?) to take an `Option[A]` and an `Option[B]` and get back an `Option[(A, B)])`. If either of the two operands is `None` the resulting value will be `None`. Otherwise, they will be `Some[(A, B)])`. Now, when we pattern match we only have to handle the two cases we care about: when they both exist and otherwise. 
 
 	scala> 3.some <|*|> 2.some match {
 		| case Some((a, b)) if a == b => println("equal")
@@ -110,7 +110,7 @@ Scalaz also gives us a useful way to check the existence and values of two optio
 		| case Some((_, _)) => println("not equal")
 		| case None => println("at least one doesnt exist")
 		| }
-	at least one doesnt exist
+	at least one doesn't exist
 	
 
 Especially when we have many cases to handle when both exist, this is a much cleaner and clearer approach than using `(Option[A], Option[B])` despite the funky operator. You can also do some other cool things mixing this operator with for comprehensions or some of the things above.
