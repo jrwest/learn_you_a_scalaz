@@ -178,7 +178,7 @@ In Scalaz, you can call append on an instance of a type that is a member of `Sem
 
 ### Rule 2: associativity
 
-The second rule you need to be a member of `Semigroup` is called *associativity*. It adds onto the closure rule by saying that if you append a and b together, and then append the result of that to c, then the result has to be the same as if you append a to the result of appending b and c. This is the exact same associativity rule as you might remember from addition & subtraction in math. Formally, the property looks like this:
+The second rule you need to be a member of `Semigroup` is called *associativity*. It adds onto the closure rule by saying that if you append a and b together, and then append the result of that to c, then the result has to be the same as if you append a to the result of appending b and c. This is the exact same associativity rule as you might remember from addition & multiplication in math. Formally, the property looks like this:
 
 	Let a, b, c be any three instances of type A. append is associative on A if append(a, append(b, c)) === append(append(a, b), c)
 
