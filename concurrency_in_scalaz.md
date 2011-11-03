@@ -6,7 +6,7 @@ In this section we'll explore how Scalaz applies functional programming ideas to
 
 ## Let's talk about the `Future`
 
-Before we start, let's briefly cover `Future`s to get some background on what we're going to talk about in this section. Simply put, `Future[T]` is a class that represents work that will evaluate to a `T` that's happening in the background which might not be finished yet. Of course, Java also makes it easy to start computations and return `Future`s to represent those computations. Here's how you'd do that in Scala (you didn't think we'd go back to Java land, did you?)
+Before we start, let's briefly cover `Future`s to get some background on what we're going to talk about in this section. Simply put, `Future[T]` is a class that represents work that will give you a `T`, but isn't done yet. Futures are in the Java standard library, and Java makes is relatively easy to start computations in the background and return `Future`s to represent those computations. Here's how you'd do that in Scala (you didn't think we'd go back to Java land, did you?)
 
 	scala> import java.util.concurrent.{Executors, Callable}
 	import java.util.concurrent.{Executors, Callable}
@@ -22,7 +22,7 @@ Before we start, let's briefly cover `Future`s to get some background on what we
 
 Notice the call to `svc.submit(new Callable…)` - that's what turns your code into a `Future` that executes it concurrently. When you call `get` on that future, you wait until the future is done and has a result.
 
-`Futures` give a fairly high level abstraction that helps you write safe & easy-to-reason-about concurrent code. That's what we were going for, right? Well, almost. The one problem with futures arises when you need to do implement a function that applies a function to a bunch of futures like this:
+`Futures` give a pretty high level abstraction that helps you write safe & easy-to-reason-about concurrent code. That's what we were going for, right? Well, almost. The one problem with futures arises when you need to do implement a function that applies a function to a bunch of futures like this:
 
 	def applyToAllResults[F, G](futures:List[Future[F]], fn:F => G):List[G]
 
@@ -36,13 +36,13 @@ A naïve implementation would look like this:
 		l
 	}
 
-But there's a problem here! You have to call f.get on every future in the list to get each result. If you have a future somewhere in the list that takes a long time to finish, then you hold up the loop until the future is done! That is, `Future`s are not easily **composable**.
+But there's a problem here! You have to call f.get on every future in the list to get each result. If you have a future somewhere in the list that takes a long time to finish, then you hold up the loop until the future is done!  This property is called **composability**, and it turns out to be important if you need to deal with many `Future`s at once.
 
 ## I `Promise` it gets better!
 
-Scalaz fixes the composability problem with `Promise`s (insert additional play-on-words for promise here). Remember, `Futures` posed a problem in our previous example when we wanted to call a function on the results of many futures in a list. Promises let you tell them the function to call when the result is ready.
+Scalaz fixes that composability problem with `Promise`s (insert additional play-on-words for promise here). Remember, `Futures` had a problem in our previous example when we wanted to get the results of many futures in a list and pass each result to a function. Promises solve that problem by letting you give them a function, and automatically executing that function for you when the result is ready.
 
-First, let's check out how to create a promise. It's less code to create promises using Scalaz. Here's the canonical example. Make sure you `import scalaz.concurrent._` for these examples:
+First, let's check out how to create a promise. Make sure you `import scalaz.concurrent._` for these examples:
 
 	scala> lazy val e = {Thread.sleep(200); "Done!"}
 	e: java.lang.String = <lazy>
@@ -53,7 +53,7 @@ First, let's check out how to create a promise. It's less code to create promise
 	scala> p.get
 	res0: java.lang.String = Done!
 
-Now that we can easily create promises, let's go back to our `applyToAllResults` function. The first step in implementing that function is to get our function called on each promise when the promise is complete, without calling get:
+Now that we can easily create promises, let's go back to our `applyToAllResults` function. The first step in our implementation is to tell each promise to execute our function when it's done:
 
 	def getPromisesForAllResults[F, G](promises:List[Promise[F]], fn:F => G):List[Promise[G]] = {
 		var l = List[Promise[G]]()
@@ -63,27 +63,27 @@ Now that we can easily create promises, let's go back to our `applyToAllResults`
 		l
 	}
 
-We're almost there - we now have a function that returns a list of promises, which will contain the results of applying `fn` on the result of each promise. Let's finish it off
+We're almost there - we now have a function that returns a list of promises, which will contain the results of applying `fn` on the result of each promise. Let's finish it off:
 
 	def applyToAllResults[F, G](promises:List[Promise[F]], fn:F => G):List[G] = {
 		val promises = getPromisesForAllResults(promises, fn)
-		val mappedPromise = promises.parMap(promise => promise.get)
+		val mappedPromise = promises.parMap((p:Promise) => p.get)
 		mappedPromise.get
 	}
 
-The key to this code is the parMap function. That function took our function `promise => promise.get` and returned a `Promise`, which we called mappedPromise, that contains a `List[G]` - exactly the type we need to return! After all that, we can finally call `get` on mappedPromise, and we'll get our `List[G]` back. The key, though, is that all the `get` calls on each `Promise` in the list will be called in parallel, and `mappedPromise.get` will return when all of the get calls have returned <sup>1</sup>.
+The key to this code is `parMap`. `parMap` took our function `(p:Promise) => p.get` and returned a `Promise`, which we called `mappedPromise`. `mappedPromise`'s contains a `List[G]`, which is exactly the type we need to return! When we call `get` on `mappedPromise`, we'll get our `List[G]` back. Notice that we now have all of the individual `get` calls on each `Promise[F]` happening in the background, and now we can call one `get` call on a **new** promise, and get back the result <sup>1</sup>.
 
-I hope you can see the benefit to this approach with `Promise`s over the approach with `Future`s. Many problems require the use of multiple concurrent operations, and `Promise`s give a straightforward and hopefully easy to reason about (and functional!) mechanism for joining those concurrent operations together in interesting ways.
+I hope you can see the benefit to this approach with `Promise`s over the previous approach with `Future`s. There are a lot of problems that need to use multiple concurrent operations, and `Promise`s give a hopefully easy to reason about joining those concurrent operations together.
 
-Promises are a great tool for executing one-off computations and getting the result when they're done, but once a promise is complete, that's it, you're done. Do not pass go. Do not collect $200. But what if you want to do the same concurrent computation repeatedly? Keep on truckin' to find out how.
+But `Promise`s have a caveat that makes them a poor choice for some problems: once a `Promise` is complete, that's it, you're done. Do not pass go. Do not collect $200. What if you want to do the same concurrent computation repeatedly? Go on if you'd like to find out how!
 
 ## `Actor` like you're impressed
 
-You might already be familiar with [Scala Actors](http://www.scala-lang.org/api/current/scala/actors/Actor.html) or [Akka Actors](http://akka.io/docs/akka/1.2/scala/actors.html). If you aren't, not to worry! Scalaz's actors are similar to the other forms, but somewhat simpler.
+You might already be familiar with [Scala Actors](http://www.scala-lang.org/api/current/scala/actors/Actor.html) or [Akka Actors](http://akka.io/docs/akka/1.2/scala/actors.html). If you aren't, not to worry! Scalaz's actors are similar to the other forms, but simpler & purer.
 
-Actors are kind of like Promises in that they execute a function concurrently. The difference lies in how you execute that function. A promise starts its function in the background & executes it to completion once, but a Scalaz actor can execute a function in the background as many times as is necessary, and anyone can send an asynchronous message to the actor in order to execute that function.
+Actors are similar to Promises beacuse they execute a function concurrently. The difference lies in the interface they give you. A promise starts its function in the background & then lets you get the result when it's done, but a Scalaz actor can execute its function in the background as many times as is necessary, and anyone can send an asynchronous message to the actor in order to execute that function. Also, the actor's function always returns Unit, so `Actor` doesn't give you a direct way to get a return value like `Promise` does.
 
-Let's start with a simple example. Remember that actors do their work in the background and sending a message to an actor is completely asynchronous and immediate. So you can do whatever you want in an actor without worrying about blocking your thread. Let's look at a simple example that does logging very inefficiently:
+Let's start with a simple example. Remember that actors do their work in the background. You can always quickly send a message to and it'll be put on the actor's mailbox queue. So you can do whatever you want in an actor without worrying about blocking your thread. Let's look at a simple example that does logging very inefficiently:
 
 	val logger = actor(s:String => {
 		for(c in s) {
@@ -95,9 +95,9 @@ Let's start with a simple example. Remember that actors do their work in the bac
 	logger("Log message 2 for great good")()
 	logger("Log message 3 for great good")()
 
-As we can see, doing logging takes a loooooooing time (approximately (s.length / 2) seconds per log string)! But we can call logger as much as we want without waiting.
+As we can see, doing logging takes a loooooooing time (approximately (s.length / 2) seconds per log string)! But we can call logger as much as we want without waiting. The log messages will be queued up, and will be executed in order in the actor sometime in the future.
 
-Also, check out that `()` after the logger(…) call. `logger(…)` actually returns a `() => Unit`, so we have to actually execute that function by adding the `()` after the initial call to logger.
+Also, notice that `()` after the logger(…) call. `logger(…)` actually returns a `() => Unit`, so we have to actually execute that returned function by adding the `()` after the initial call to logger.
 
 ### Going big
 
