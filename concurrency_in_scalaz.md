@@ -71,7 +71,7 @@ We're almost there - we now have a function that returns a list of promises, whi
 		mappedPromise.get
 	}
 
-The key to this code is the parMap function. That function took our function `promise => promise.get` and returned a `Promise`, which we called mappedPromise, that contains a `List[G]` - exactly the type we need to return! After all that, we can finally call `get` on mappedPromise, and we'll get our `List[G]` back. The key, though, is that all the `get` calls on each `Promise` in the list will be called in parallel, and `mappedPromise.get` will return when all of the get calls have returned.
+The key to this code is the parMap function. That function took our function `promise => promise.get` and returned a `Promise`, which we called mappedPromise, that contains a `List[G]` - exactly the type we need to return! After all that, we can finally call `get` on mappedPromise, and we'll get our `List[G]` back. The key, though, is that all the `get` calls on each `Promise` in the list will be called in parallel, and `mappedPromise.get` will return when all of the get calls have returned <sup>1</sup>.
 
 I hope you can see the benefit to this approach with `Promise`s over the approach with `Future`s. Many problems require the use of multiple concurrent operations, and `Promise`s give a straightforward and hopefully easy to reason about (and functional!) mechanism for joining those concurrent operations together in interesting ways.
 
@@ -79,7 +79,11 @@ Promises are a great tool for executing one-off computations and getting the res
 
 ## `Actor` like you're impressed
 
-You might already be familiar with [Scala Actors](http://www.scala-lang.org/api/current/scala/actors/Actor.html) or [Akka Actors](http://akka.io/docs/akka/1.2/scala/actors.html). If you aren't, not to worry! Scalaz's actors are similar to the other forms, but are actually somewhat simpler. Let's start with a short introduction to Scalaz Actors. You can think of actors as a way to execute functions that look like `T => Unit` concurrently. Another way to think about an actor is a promise on which you never call `get`. Let's look at a simple example that builds an actor that does some rather inefficient logging for us:
+You might already be familiar with [Scala Actors](http://www.scala-lang.org/api/current/scala/actors/Actor.html) or [Akka Actors](http://akka.io/docs/akka/1.2/scala/actors.html). If you aren't, not to worry! Scalaz's actors are similar to the other forms, but somewhat simpler.
+
+Actors are kind of like Promises in that they execute a function concurrently. The difference lies in how you execute that function. A promise starts its function in the background & executes it to completion once, but a Scalaz actor can execute a function in the background as many times as is necessary, and anyone can send an asynchronous message to the actor in order to execute that function.
+
+Let's start with a simple example. Remember that actors do their work in the background and sending a message to an actor is completely asynchronous and immediate. So you can do whatever you want in an actor without worrying about blocking your thread. Let's look at a simple example that does logging very inefficiently:
 
 	val logger = actor(s:String => {
 		for(c in s) {
@@ -91,19 +95,60 @@ You might already be familiar with [Scala Actors](http://www.scala-lang.org/api/
 	logger("Log message 2 for great good")()
 	logger("Log message 3 for great good")()
 
-As we can see, doing logging takes a loooooooing time (approximately (s.length / 2) seconds per log string)! But we can call logger as much as we want without waiting that long because the code inside of `actor(…)` is executed concurrently to the code that calls `logger(…)`. Another thing to note is that our call to `logger(…)` returns a `Function0` that returns Unit. That is, we get back a function that looks like: `() => Unit`, so we have to actually execute that function by adding the `()` after the initial call to logger.
+As we can see, doing logging takes a loooooooing time (approximately (s.length / 2) seconds per log string)! But we can call logger as much as we want without waiting.
 
-This code shows the simplest form of a Scalaz actor. In fact, Scalaz actors are extremely simple, but remember that you can do anything you want in the function that you pass to the actor. Let's look at a more complex example that acts as a proxy and forwards data to the appropriate place:
+Also, check out that `()` after the logger(…) call. `logger(…)` actually returns a `() => Unit`, so we have to actually execute that function by adding the `()` after the initial call to logger.
+
+### Going big
+
+Now that we have the basics, let's consider a bigger example. Imagine we have a very popular iPhone game called Furious Pigeons. There are a variety of different pigeons in the game, each of which is identified by a unique string. Somewhere in your code, there's a case class that looks like this: `case class Pigeon(kind:String)`.
+
+There are billions of pigeons in the game, and you'd like to count the number of pigeons of each kind. You have a `List[Pigeon]` called `l` that has all sorts of different pigeon types, and you'd like to count the number of each pigeon. With the help of a Scalaz actors and a ConcurrentHashMap to hold the counts, we can do that quickly:
 	
-	val proxyActor = actor(e:(Option[(String, Actor[String])], Option[(Int, Actor[Int])]) => {
-		def doMatch[T](opt: Option[T, Actor[T]]) {
-			opt match {
-				case Some(tup) => tup._2(tup._1)()
-				case None => //do nothing
+	import java.util.concurrent.ConcurrentHashMap
+	import java.util.concurrent.atomic.AtomicInteger
+	import util.Random
+	import scalaz._
+	import Scalaz._
+	
+	val counts = new ConcurrentHashMap[String, AtomicInteger]()
+	
+	//a simple function to calculate the counts of Pigeons in a List
+	def calculateCounts(pigeons:List[Pigeon]) = {
+		for(p <- pigeons) {
+			Option(counts.putIfAbsent(p.kind, new AtomicInteger(1))) match {
+				case Some(atomicInt:AtomicInteger) => atomicInt.incrementAndGet()
+				case None => //atomic integer already set
 			}
 		}
-		doMatch(e._1)
-		doMatch(e._2)
+	}
+
+	//let's create a bunch of actors that can count pieces of the pigeons list
+	val numCountActors = 100
+	val countActors = for(i <- 0 until numCountActors) yield actor(( calculateCounts _ ))
+
+	//let's create an actor that can take in the monstrous list and distribute it across all of our countActors
+	val distributorActor = actor((l:List[Pigeon]) => {
+		val rand = new Random()
+		//the size of the chunks of Pigeons we want to count in each countActor
+		val chunkSize = 20
+		def distribute(startInclusive:Int, endExclusive:Int) {
+			if(startInclusive > l.size) {
+				return
+			}
+
+			val actor = countActors(rand.nextInt(countActors.size))
+			actor(l.slice(startInclusive, endExclusive))()
+			distribute(endExclusive, endExclusive + chunkSize)
+		}
+		distribute(0, chunkSize)
 	})
 
-**TODO: figure out some more novel uses for Scalaz actors**
+	val tonsOfPigeons = getAMonstrousAmountOfPigeons()
+	distributorActor(tonsOfPigeons)()
+
+### Divide and Conquor
+
+You might recognize what we did here as a divide and conquor pattern. We split a large list into smaller pieces, and did a calculation on each. Since we're doing addition, which is associative, we can do the calculations in any order and come up with the correct result.
+
+<sup>1</sup> We could have done the map and parMap in the same step, but we split them here for clarity.
