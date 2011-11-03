@@ -10,7 +10,7 @@ The topics we will discuss in this section are also foundational topics. They wi
 
 Before, we talked about `Equal[-A]` to better understand what typeclasses are. Let's revist it one more time briefly and learn some finer details about it. To get our hands dirty we will also make our own class a member. We won't always do this when touring different typeclasses, but `Equal` is relatively straight-forward and we want typesafe equals for our types as well. 
 
-Members of the `Equal` typeclass includes all of the types you'd expect including `Int`, `Byte`, and `String` as well as ones you may or may not have expected like `xml.NodeSeq`. For a full list take a look at the [definition](https://github.com/scalaz/scalaz/blob/master/core/src/main/scala/scalaz/Equal.scala). As we know this typeclass gives us the `===` operator for all member types. 
+Members of the `Equal` typeclass include all of the types you'd expect including `Int`, `Byte`, and `String` as well as ones you may or may not have expected like `xml.NodeSeq`. For a full list take a look at the [definition](https://github.com/scalaz/scalaz/blob/master/core/src/main/scala/scalaz/Equal.scala). As we know this typeclass gives us the `===` operator for all member types. 
 
 	scala> 'a === 'b
 	res4: Boolean = false
@@ -178,7 +178,7 @@ In Scalaz, you can call append on an instance of a type that is a member of `Sem
 
 ### Rule 2: associativity
 
-The second rule you need to be a member of `Semigroup` is called *associativity*. It adds onto the closure rule by saying that if you append a and b together, and then append the result of that to c, then the result has to be the same as if you append a to the result of appending b and c. This is the exact same associativity rule as you might remember from addition & subtraction in math. Formally, the property looks like this:
+The second rule you need to be a member of `Semigroup` is called *associativity*. It adds onto the closure rule by saying that if you append a and b together, and then append the result of that to c, then the result has to be the same as if you append a to the result of appending b and c. This is the exact same associativity rule as you might remember from addition & multiplication in math. Formally, the property looks like this:
 
 	Let a, b, c be any three instances of type A. append is associative on A if append(a, append(b, c)) === append(append(a, b), c)
 

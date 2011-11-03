@@ -1,16 +1,16 @@
 # What is Scalaz?
 
-Scalaz's Google Code page says it is a library of "Type Classes and Pure Functional Data Structures." You may have heard it also uses the Pimp My Library pattern or seen references to its pimpz. What does this mean? In this section we will talk about all of that. Knowing what they are isn't the only thing that is interesting, however. Its how we can use them and why they make our code better that we really want to know. We will only begin to scratch the surface of the "hows" & the "whys" in this section. First, we must go over the "whats". If you are familiar with the "introductory" functional programming & data structures and typeclasses gibber gabber you may find this section too far up in the clouds. In the next sections we will get our hands dirty and cover things in detail. Check out the section on pimping your Scala if your not familiar with the pattern. We will also discuss the core pimpz of Scalaz.
+Scalaz's Google Code page says it is a library of "Type Classes and Pure Functional Data Structures." You may have heard it also uses the Pimp My Library pattern or seen references to its pimpz. What does this mean? In this section we will talk about all of that. Knowing what they are isn't the only thing that is interesting, however. It's how we can use them and why they make our code better that we really want to know. We will only begin to scratch the surface of the "hows" & the "whys" in this section. First, we must go over the "whats". If you are familiar with the "introductory" functional programming & data structures and typeclasses gibber gabber you may find this section too far up in the clouds. In the next sections we will get our hands dirty and cover things in detail. Check out the section on pimping your Scala if you're not familiar with the pattern. We will also discuss the core pimpz of Scalaz.
 
 ## Typeclasses == Classes of Types
 
-Typeclasses are classes of types. I can hear my 1st english teacher telling me, "you can't use the word your defining in the definition, young man." Correct he is -- and was, although I can't quite remember the word.
+Typeclasses are classes of types. I can hear my 1st english teacher telling me, "you can't use the word you're defining in the definition, young man." Correct he is -- and was, although I can't quite remember the word.
 
 So let's get a better defintion. 
 
-	Typeclasses define a finite set of behaviors on a possibly ininite set of types. 
+	Typeclasses define a finite set of behaviors on a possibly infinite set of types. 
 
-Let's pick that apart. We have two sets of things in play here. The first is a finite set of behaviors (read functions, or if you prefer methods). The second is a possibly infinite set of types. A `possibly infinite set of types`, that needs some more explanation. Infinite doesn't always mean all of the possible Scala types we could ever write. We might be talking about them, but we could also be talking about all types we could write that are parameterized by one, or even two types. In functional programming and Scalaz we are often talking about types that meet some mathematical property, often from a branch of Mathematics called `Category Theory`.<sup>1</sup>  This is why `possibly infinite` is important. We may know the number of types that meet a certain mathematical property right this moment but we human beings are a smart species and it is possible there  are more types, maybe onese we haven't even written yet, that we have yet to prove meet the property. A simple example, and a not too mathematical one, would be all of the types for which we could compare two instances with one another. You may be thinking, "but wait `==` lets me compare any two things." This isn't Scala's `==` operator (behaviour) though. This is comparing two instances *of the same type and only the same type*. In Scalaz this is the `===` operator and support for one of your own classes would need to be defined, but we'll talk about that more in a minute.
+Let's pick that apart. We have two sets of things in play here. The first is a finite set of behaviors (read functions, or if you prefer methods). The second is a possibly infinite set of types. A `possibly infinite set of types`, that needs some more explanation. Infinite doesn't always mean all of the possible Scala types we could ever write. We might be talking about them, but we could also be talking about all types we could write that are parameterized by one, or even two types. In functional programming and Scalaz we are often talking about types that meet some mathematical property, often from a branch of Mathematics called `Category Theory`.<sup>1</sup> This is why `possibly infinite` is important. We may know the number of types that meet a certain mathematical property right this moment but we human beings are a smart species and it is possible there are more types, maybe ones we haven't even written yet, that we have yet to prove meet the property. A simple example, and a not too mathematical one, would be all of the types for which we could compare two instances with one another. You may be thinking, "but wait `==` lets me compare any two things." This isn't Scala's `==` operator (behaviour) though. This is comparing two instances *of the same type and only the same type*. In Scalaz this is the `===` operator and support for one of your own classes would need to be defined, but we'll talk about that more in a minute.
 
 
 At first, its easy to think that typeclasses sound just like classes in warm-and-fuzzy OOP-land. `Any` defines methods on every Scala type, you might say. But how would you define a superclass of all types parameterized by one type? You can't with classes. Thanks to the features of Scala we have another solution.
@@ -30,9 +30,9 @@ In classic Object Oriented Programming we use a class hierarchy to organize rela
 	scala> 1 == "1"
 	res1: Boolean = false
 
-The truth is its not Scala's fault that `==` works this way. Its a product of the JVM it runs on. Scala does its best to tell you at compile time that your most likely doing something you didnt mean to. 
+The truth is its not Scala's fault that `==` works this way. Its a product of the JVM it runs on. Scala does its best to tell you at compile time that you're most likely doing something you didnt mean to. 
 
-	warning: comparing values of types Int and java.lang.String using `==' will always yield false
+> Warning: comparing values of types Int and java.lang.String using `==' will always yield false
               1 == "1"
                 ^
 The warning is a nice helper but typesafe compilers are even more helpful when they give us compiler errors when we are about to do something wrong. The problem is we can't make `==` typesafe because it is defined on `Any`. <sup>3</sup> Many times in our own classes we handle this with something like
@@ -69,7 +69,7 @@ What about different types:
 	scala> tEqual(1, "3")
 	res4: Boolean = false
 
-Hmm, we didn't get a compiler error (well a repl error in this case) like we should for typesafe equals. You may have spotted why. If not, look back at our definition of `tEqual` it takes a type parameter `A`. Scala's type inferencer will look for a common supertype of the two arguments passed in if you do not specify the type of `A` when calling `tEqual`. When we can `tEqual(1, "3")` we are actually calling the eqiuvalent of `tEqual[Any](1, "3")`. Specifying `A` we get the expected error.
+Hmm, we didn't get a compiler error (well a repl error in this case) like we should for typesafe equals. You may have spotted why. If not, look back at our definition of `tEqual` it takes a type parameter `A`. Scala's type inferencer will look for a common supertype of the two arguments passed in if you do not specify the type of `A` when calling `tEqual`. When we can `tEqual(1, "3")` we are actually calling the equivalent of `tEqual[Any](1, "3")`. Specifying `A` we get the expected error.
 
 	scala> tEqual[Int](1, "3")
 	<console>:12: error: type mismatch;
@@ -89,9 +89,9 @@ So the `Equal` typeclass encompasses all types for which any two instances of th
 		def equal(a1: A, a2: A): Boolean
 	}
 
-Note: I typically do not want to cover how Scalaz is implemented. I'm more interested in discussing how to use it for the betterment of mankind! Rarely will I include all or even parts of the definitions in this tutorial except for when I think it might benefit our understanding of things. When included, there will also be a link to where the code can be found. Scalaz can be a bit hard to navigate at times even as well laid out as it is. In this case I find it useful to see how `Equal` is defined and to discuss it a bit. This is also not the full story of `Equal` (some of which you will see in a moment). 
+> Note: I typically do not want to cover how Scalaz is implemented. I'm more interested in discussing how to use it for the betterment of mankind! Rarely will I include all or even parts of the definitions in this tutorial except for when I think it might benefit our understanding of things. When included, there will also be a link to where the code can be found. Scalaz can be a bit hard to navigate at times even as well laid out as it is. In this case I find it useful to see how `Equal` is defined and to discuss it a bit. This is also not the full story of `Equal` (some of which you will see in a moment). 
 
-Like we said above, Scala trait's help us to define typeclasses. Before we talk about the `equal` function lets look at the definition of the trait: `trait Equal[-A]`. The definition leverages more than traits but also the Scala type system, like we said it would. `Equal` is parameterized by a single type. We use the type variable `A` to represent this type. In type classes it is always the case that our traits will be parameterized by some number of types. The trait lets us group similar behavior (the finite set) and the type parameters let us talk about the set of types the behaviors apply too. Let's use this trait to define a better utility method than the `tEqual` we defined before. This is not how Scalaz makes the equal behavior to you, we are still working towards that, but it will give us an understanding of this typeclass. In this case, we are going to show how `Int` is a member of `Equal`.
+Like we said above, Scala traits help us to define typeclasses. Before we talk about the `equal` function lets look at the definition of the trait: `trait Equal[-A]`. The definition leverages more than traits but also the Scala type system, like we said it would. `Equal` is parameterized by a single type. We use the type variable `A` to represent this type. In type classes it is always the case that our traits will be parameterized by some number of types. The trait lets us group similar behavior (the finite set) and the type parameters let us talk about the set of types the behaviors apply too. Let's use this trait to define a better utility method than the `tEqual` we defined before. This is not how Scalaz makes the equal behavior to you, we are still working towards that, but it will give us an understanding of this typeclass. In this case, we are going to show how `Int` is a member of `Equal`.
 
 	scala> object IntEqual extends Equal[Int] {
 		| def equal(a1: Int, a2: Int): Boolean = a1 == a2
@@ -118,9 +118,9 @@ Often, contravariance is not initially as clear as its counterpart covariance. W
 
 The function takes two instances of `A` and returns a `Boolean` - what we expect from typesafe equals. Let's use that knowledge to explore why `A` is contravariant in this case. Imagine we define a subclass of `Int` called `RangedInt` that represents a subset of the integers represented by `Int`. It makes sense that we could pass one of these into `IntEqual.equal` because, since `RangedInt` is a subset of the domain of `Int`, we know that they can be compared for equality. However, we can't pass an `Any` to `IntEqual.equal` because it is a supertype of `Int`, and that's exactly what we're trying to prevent!
 
-So, `Equal[Int]` is a supertype of `Equal[Any]` even though `Any` is a supertype of `Int`.  Now this makes more sense. `Equal[Any]` provides a broader set of functionality (the ability to compare any two Scala objects using our typesafe equals) than `Equal[Int]` does, the same way `Any` defines broader functionality than `Int`. 
+So, `Equal[Int]` is a supertype of `Equal[Any]` even though `Any` is a supertype of `Int`. Now this makes more sense. `Equal[Any]` provides a broader set of functionality (the ability to compare any two Scala objects using our typesafe equals) than `Equal[Int]` does, the same way `Any` defines broader functionality than `Int`. 
 
-Hint: `Equal[Any]` is not given to you by Scalaz because it isn't very useful and kind of defeats the purpose of the `Equal` typeclass. Scala's blend of OOP and FP is extremely powerful but it also let's you define useless things like `Equal[Any]` which you should not do. 
+Hint: `Equal[Any]` is not given to you by Scalaz because it isn't very useful and kind of defeats the purpose of the `Equal` typeclass. Scala's blend of OOP and FP is extremely powerful but it also lets you define useless things like `Equal[Any]` which you should not do. 
 
 So the `Equal` typeclass sounds pretty good. It gives us a very powerful & safe typesafe `equal` function. But we're not home yet. It's not exactly clear how we get instances of `Equal`. Scalaz includes `Int` and many other types in the `Equal` typeclass, but how do we really use this stuff? Also, `equal` still can't be used like an operator. Before we get to see the whole picture we need to learn how to Pimp our Scala. 
 
@@ -142,7 +142,7 @@ The key to the pattern is another feature of Scala: implicits. Using implicits y
 	scala> (new ListFortyTwoW(Nil)).fortyTwo
 	java.lang.IndexOutOfBoundsException: 41
 
-but thats verbose, nasty and most importantly not very interesting. What would be interesting is being able to call `List(1, 2, 3).fortyTwo`. That's not something given to us by the Scala Standard Library. When you call a method that is not defined for a type Scala will look in scope for an implicit function that converts the instance to a type that does. We need one of those, and as you might have guessed its pretty easy to define.
+but thats verbose, nasty and most importantly not very interesting. What would be interesting is being able to call `List(1, 2, 3).fortyTwo`. That's not something given to us by the Scala Standard Library. When you call a method that is not defined for a type Scala will look in scope for an implicit function that converts the instance to a type that does. We need one of those, and as you might have guessed it's pretty easy to define.
 
 	scala> implicit def listToFortyTwoW[T](xs: List[T]) = new ListFortyTwoW[T](xs)
 	listToFortyTwoW: [T](xs: List[T])ListFortyTwoW[T]
@@ -174,24 +174,24 @@ Let's jump back to the `Equal` typeclass and see how Scalaz gives us the conveni
 
 Note: Once again, the intention is not to discuss the implementation details of Scalaz at length. How `Equal` and the implicits are in scope is a path I encourage you to explore, but it won't be covered here.
 
-The defintion of `===` has two argument lists, the second of which is implicit. Scala allows us to do this so that we can define more convenient to use functions. In the case of this defintion we can call `===` on any type `A` (`A` will first be implicitly converted to an `Identity[A]`) for any `A` which has a corresponding `Equal[A]` defined. This only works if both the implicit conversion from `A` to `Identity[A]` and an implicit `Equal[A]` are in scope. This is why the methods defined in `Identity`, `MA` and `MAB` don't always apply to all of the types the pimps encompass. If we don't have a `Equal[A]` for our `A` then it is not a member of the `Equal` typeclass and we can't use the `===` behavior on it.
+The defintion of `===` has two argument lists, the second of which is implicit. Scala allows us to do this so that we can define more convenient ways to use functions. In the case of this defintion we can call `===` on any type `A` (`A` will first be implicitly converted to an `Identity[A]`) for any `A` which has a corresponding `Equal[A]` defined. This only works if both the implicit conversion from `A` to `Identity[A]` and an implicit `Equal[A]` are in scope. This is why the methods defined in `Identity`, `MA` and `MAB` don't always apply to all of the types the pimps encompass. If we don't have a `Equal[A]` for our `A` then it is not a member of the `Equal` typeclass and we can't use the `===` behavior on it.
 
-With all of that in mind we have a pretty clear picture of what Scala typeclasses look like. They are representing using polymorphic traits and the scala type system. We provide convenient access to the behaviors they define on certain types using pimps and implicits.
+With all of that in mind we have a pretty clear picture of what Scala typeclasses look like. They are represented using polymorphic traits and the scala type system. We provide convenient access to the behaviors they define on certain types using pimps and implicits.
 
 ## Purely Functional Data Structures
 
-Scalaz also says it gives us purely functional datastructes.<sup>4</sup> How do purely functional data structures differ from the imperative ones? We'll derive the answer by thinking about how programs written to a functional programming contract are pure along with our knowledge of Scala.
+Scalaz also says it gives us purely functional data structures.<sup>4</sup> How do purely functional data structures differ from the imperative ones? We'll derive the answer by thinking about how programs written to a functional programming contract are pure along with our knowledge of Scala.
 
-Functional programming requires us to program without side-effects. We won't dive into the depths of discussing why functional programming is valuable, but we will talk about side-effect free programming since its pertinent to the discussion of functional data structures.
+Functional programming requires us to program without side-effects. We won't dive into the depths of discussing why functional programming is valuable, but we will talk about side-effect free programming since it's pertinent to the discussion of functional data structures.
 
-We're all familiar with side-effects like reading and writing to a database, or printing text to the console. Mututating objects (changing the value's of their fields) are side-effects too. Since we can't use side-effects in programs written to the functional contract we can't mutate objects in our functions. This is the first pillar of functional data structures. We cannot perform *destructive updates* (cause side-effects) on them. 
+We're all familiar with side-effects like reading and writing to a database, or printing text to the console. Mutating objects (changing the value's of their fields) is a side-effect too. Since we can't use side-effects in programs written to the functional contract we can't mutate objects in our functions. This is the first pillar of functional data structures. We cannot perform *destructive updates* (cause side-effects) on them. 
 
 We are familiar with some data structures like this already in Scala. `scala.collection.immutable.List` is a data structure that we cannot mutate. Once we have an instance of `List` that's it. We know from using Scala however that we can get new lists from our lists, however. And thats just it! We get NEW instances of our data structures instead of mutating them. Let's start with a list of 3 `Int`s
 
 	scala> val a = List(1, 2, 3)
 	a: List[Int] = List(1, 2, 3)
 
-When he add an element to the head of the list and assign it to a new variable we do not change the original list as we know. We can also add a different element to the head of our list that `a` points to and not affect the first.
+When we add an element to the head of the list and assign it to a new variable we do not change the original list as we know. We can also add a different element to the head of our list that `a` points to and not affect the first.
 
 	scala> val b = 1 :: a
 	b: List[Int] = List(1, 1, 2, 3)
