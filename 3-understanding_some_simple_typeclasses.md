@@ -8,7 +8,7 @@ The topics we will discuss in this section are also foundational topics. They wi
 
 ## Typing our Safe Equals
 
-Before, we talked about `Equal[-A]` to better understand what typeclasses are. Let's revist it one more time briefly and learn some finer details about it. To get our hands dirty we will also make our own class a member. We won't always do this when touring different typeclasses, but `Equal` is relatively straight-forward and we want typesafe equals for our types as well. 
+Before, we talked about `Equal[-A]` to better understand what typeclasses are. Let's revisit it one more time briefly and learn some finer details about it. To get our hands dirty we will also make our own class a member. We won't always do this when touring different typeclasses, but `Equal` is relatively straight-forward and we want typesafe equals for our types as well. 
 
 Members of the `Equal` typeclass include all of the types you'd expect including `Int`, `Byte`, and `String` as well as ones you may or may not have expected like `xml.NodeSeq`. For a full list take a look at the [definition](https://github.com/scalaz/scalaz/blob/master/core/src/main/scala/scalaz/Equal.scala). As we know this typeclass gives us the `===` operator for all member types. 
 
@@ -146,7 +146,7 @@ Step back and think about why this simple example makes our code better. We just
 
 ## Adding the World (with Semigroups)
 
-Ok so we've gotten our hands a little dirty -- or if your still pimping with Xzhibit, a little greasy -- but now it's time to really dive in and get muddy. We'll talk about a cool typeclass, `Semigroup`. Although the heading above is hyperbole and Semigroups don't really let us add the world, they do let us add a ton of stuff. <sup>1</sup>
+Ok so we've gotten our hands a little dirty -- or if you're still pimping with Xzhibit, a little greasy -- but now it's time to really dive in and get muddy. We'll talk about a cool typeclass, `Semigroup`. Although the heading above is hyperbole and Semigroups don't really let us add the world, they do let us add a ton of stuff. <sup>1</sup>
 
 Members of `Semigroup` meet two mathematical properties.
 
@@ -250,7 +250,7 @@ This is very useful if you have a default `Either` you want to use when another 
 
 Let's get back to the `List` and `Boolean` examples from above, now. You have have noticed a couple things. For one, when we added two instances of `List[MyClass]` we didn't get an error about a missing implicit. This is because `append` for `Semigroup[List]` is not defined in the same fashion as `append` in `Semigroup[Option]`.<sup>2</sup> When you append two lists it doesn't matter their type, `|+|` acts like `:::` from the Scala standard library. 
 
-The second thing you may have noticed is that `|+|` on `Boolean` is the same as `||` and that is the truth. But only a half-one. I've been lying to you a bit up until now (unless you've been checking the footnotes). `Semigroup` is actually a bit more general then I've lead to believe. Actually, its the `append` operation thats more general. In fact, I haven't really defined what `append` is -- except for somewhat letting you believe it meant "to add two things". If you checkout the [Wikipedia on Semigroup] it tells you straight away,
+The second thing you may have noticed is that `|+|` on `Boolean` is the same as `||` and that is the truth. But only a half-one. I've been lying to you a bit up until now (unless you've been checking the footnotes). `Semigroup` is actually a bit more general then I've lead to believe. Actually, its the `append` operation thats more general. In fact, I haven't really defined what `append` is -- except for somewhat letting you believe it meant "to add two things". If you checkout the [Wikipedia on Semigroup](http://en.wikipedia.org/wiki/Semigroup) it tells you straight away,
 
 	"a semigroup is an algebraic structure consisting of a set and a binary operation"
 
