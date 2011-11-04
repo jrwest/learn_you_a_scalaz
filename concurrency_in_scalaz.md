@@ -55,19 +55,13 @@ First, let's check out how to create a promise. Make sure you `import scalaz.con
 
 Now that we can easily create promises, let's go back to our `applyToAllResults` function. The first step in our implementation is to tell each promise to execute our function when it's done:
 
-	def getPromisesForAllResults[F, G](promises:List[Promise[F]], fn:F => G):List[Promise[G]] = {
-		var l = List[Promise[G]]()
-		for(p <- promises) {
-			l = l :+ p.map(fn)
-		}
-		l
-	}
+	def getPromisesForAllResults[F, G](promises:List[Promise[F]], fn:F => G) = for (p <- promises) yield p.map(fn)
 
 We're almost there - we now have a function that returns a list of promises, which will contain the results of applying `fn` on the result of each promise. Let's finish it off:
 
-	def applyToAllResults[F, G](promises:List[Promise[F]], fn:F => G):List[G] = {
-		val promises = getPromisesForAllResults(promises, fn)
-		val mappedPromise = promises.parMap((p:Promise) => p.get)
+	def applyToAllResults[F, G](promises:List[Promise[F]], fn:F => G) = {
+		val promisesForAllResults = getPromisesForAllResults(promises, fn)
+		val mappedPromise = promisesForAllResults.parMap((p:Promise[G]) => p.get)
 		mappedPromise.get
 	}
 
@@ -81,7 +75,7 @@ But `Promise`s have a caveat that makes them a poor choice for some problems: on
 
 You might already be familiar with [Scala Actors](http://www.scala-lang.org/api/current/scala/actors/Actor.html) or [Akka Actors](http://akka.io/docs/akka/1.2/scala/actors.html). If you aren't, not to worry! Scalaz's actors are similar to the other forms, but simpler & purer.
 
-Actors are similar to Promises beacuse they execute a function concurrently. The difference lies in the interface they give you. A promise starts its function in the background & then lets you get the result when it's done, but a Scalaz actor can execute its function in the background as many times as is necessary, and anyone can send an asynchronous message to the actor in order to execute that function. Also, the actor's function always returns Unit, so `Actor` doesn't give you a direct way to get a return value like `Promise` does.
+Actors are similar to Promises because they execute a function concurrently. The difference lies in the interface they give you. A promise starts its function in the background & then lets you get the result when it's done, but a Scalaz actor can execute its function in the background as many times as is necessary, and anyone can send an asynchronous message to the actor in order to execute that function. Also, the actor's function always returns Unit, so `Actor` doesn't give you a direct way to get a return value like `Promise` does.
 
 Let's start with a simple example. Remember that actors do their work in the background. You can always quickly send a message to and it'll be put on the actor's mailbox queue. So you can do whatever you want in an actor without worrying about blocking your thread. Let's look at a simple example that does logging very inefficiently:
 
@@ -147,8 +141,8 @@ There are billions of pigeons in the game, and you'd like to count the number of
 	val tonsOfPigeons = getAMonstrousAmountOfPigeons()
 	distributorActor(tonsOfPigeons)()
 
-### Divide and Conquor
+### Divide and Conquer
 
-You might recognize what we did here as a divide and conquor pattern. We split a large list into smaller pieces, and did a calculation on each. Since we're doing addition, which is associative, we can do the calculations in any order and come up with the correct result.
+You might recognize what we did here as a divide and conquer pattern. We split a large list into smaller pieces, and did a calculation on each. Since we're doing addition, which is associative, we can do the calculations in any order and come up with the correct result.
 
 <sup>1</sup> We could have done the map and parMap in the same step, but we split them here for clarity.
