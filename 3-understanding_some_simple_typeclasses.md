@@ -280,12 +280,69 @@ We've now seen `Semigroup` and its append do some pretty cool things. It's let u
 
 Scalaz defines tuple members of `Semigroup` for sizes two to four. You can define more if you really want.
 
-// implement our own Semigroup member
+I think its much more interesting to define our own member of Semigroup. Before we do, we need a way to prove that our member meets the rules to be a member. Technically, we can make anything a member of Scalaz's `Semigroup` typeclass, but that doesn't actually make it a semigroup. To check the closure condition we will cheat a bit and rely on the type system and the defintion of append. To check associativity we're going to use two awesome Scala testing libraries that work even better together, [Specs2](http://etorreborre.github.com/specs2/) & [ScalaCheck](http://code.google.com/p/scalacheck/). We'll start with a simple shell of the specification.
 
-// conclusion
+	class SemigroupSpec extends Specification with ScalaCheck { def is = 
+	
+		"A semigroup is associative" ! checkAssoc
 
+		def checkAssoc = //…
+
+	}
+
+If you are not familiar with Specs2 or ScalaCheck I highly recommend checking out the documentation. Quickly, what we've done here is outlined a single Specs2 example that will check if our soon to be member of semigroup is associative. We haven't actually said how we will check that property, but we will do so with ScalaCheck. Let's assume we first want to make `case class MyClass(i: Int)` from earlier our new member. We can define our associativity check as:
+
+	def checkAssoc = check {
+		(a: Int, b: Int,  c: Int) => 
+			((MyClass(a) |+| MyClass(b)) |+| MyClass(c)) must beEqualTo((MyClass(a) |+| (MyClass(b) |+| MyClass(c))))
+	}
+
+This will generate three instances of Int several times over. Each time, we use Specs2 matchers to show that appending instances of `MyClass` is associative. If this holds for all runs the test passes. 
+
+To make `MyClass` a member of `Semigroup` we'll do something very similar to what we did for `Equal`. Once again, Scalaz gives us a convenient builder function, this time via the trait `Semigroups` (noticing a pattern?).
+
+	object MySemigroup extends scalaz.Semigroups {
+  		implicit def MyClassSemigroup: Semigroup[MyClass] = semigroup((a, b) => MyClass(a.i + b.i))
+	}
+
+The `semigroup` builder takes a function of two parameters of type `A`, returning an `A`. This is your `append` function. If you add `import MySemigroup._` to the spec body and run it, it will pass.<sup>3</sup> We know this because addition, which is all we are really doing is associative as well. 
+
+How might we incorrectly make `MyClass` a member of `Semigroup`. Well we know subtraction is not associative. Does your spec pass if your define `MyClassSemigroup` like below?
+
+	semigroup((a, b) => MyClass(a.i - b.i))
+
+Mine doesn't. Can you find one or two other ways we could properly define `MyClass` as a member of `Semigroup`?
+
+Ok, that was pretty straight-forward. Let's move to a slightly more complex example. What if we instead define `MyClass` with a type parameter like:
+
+	case class MyClass[T](a: Option[T])
+
+We can quickly reason that we can make this a semigroup as long as `T` is a member of `Semigroup`. Let's rewrite our check function first:
+
+	def checkAssoc = check {
+		(a: Option[Int], b: Option[Int],  c: Option[Int]) => 
+		((MyClass(a) |+| MyClass(b)) |+| MyClass(c)) must beEqualTo((MyClass(a) |+| (MyClass(b) |+| MyClass(c))))
+	}
+
+Our test is a bit limited, we only choose one type we know to be a member of the typeclass, but it will suffice for our purposes. We can then define our new implicit conversion:
+
+	implicit def MyClassSemigroup[T : Semigroup]: Semigroup[MyClass[T]] = semigroup((a, b) => MyClass(a.a |+| b.a))
+
+The defintion limits the conversion to types `T` which are themselves a `Semigroup`. If we don't have a semigroup for a `T` then we cannot append two `MyClass[T]` instances. We see this because if we run our specification it fails. However, if we try to append two instances of `MyClass[(Int, Int) => Int]` we get a familiar error:
+
+	scala> MyClass(((a: Int, b: Int) => a).some) |+| MyClass(((a: Int, b: Int) => b).some)
+	<console>:20: error: could not find implicit value for parameter s: \
+						 scalaz.Semigroup[MyClass[(Int, Int) => Int]]
+              MyClass(((a: Int, b: Int) => a).some) |+| MyClass(((a: Int, b: Int) => b).some)
+
+
+## So That's The Basics
+
+We've now seen several of the simpler typeclasses and I hope some of their advantages are becoming clear. One thing that I hope is abundantly clear is that typeclasses are highly general. This is what makes them a bit hard to reason about at first, but its also why they are such a powerful construct. One example of this is how typeclasses improve Java-Scala interop. When working with Java collections, for example, we cannot use operators like `:::` without first importing `scala.collections.JavaConversions._`. Sometimes this boxing between Java and Scala types can be expensive and unnecessary -- often causing conversion when using the underlying Java type would really suffice if it were only possible to easily append two such objects. Java types can be members of type classes as well as long as they meet the type class' properties. `LinkedList`, `PriorityQueue` and `CopyOnWriteArrayList` are just a few of the Java types that are members of `Semigroup`. We can append these members using `|+|` without the conversion, which in some cases may not even exist. In later sections we will learn about other type classes that will allow us to do things like map and fold over types including Java ones. 
 
 
 <sup>1</sup> In mathematics, Semigroups are actually a much more general concept. We are talking about their use in Scalaz so we will not cover it that in depth but you may find it interesting to start with the ever so general defintion on [Wikipedia](http://en.wikipedia.org/wiki/Semigroup).
 
 <sup>2</sup> In reality, Scalaz does not define a `Semigroup[List]` for us, but a more general one on things that are traversable. You can get the nitty gritty by reading the [implementation](https://github.com/scalaz/scalaz/blob/master/core/src/main/scala/scalaz/Semigroup.scala).
+
+<sup>3</sup> If you are using SBT to follow along you can run the spec inside the SBT console by calling `test`. Please refer to the [Specs2 Runners Guide](http://etorreborre.github.com/specs2/guide/org.specs2.guide.Runners.html#Runners+guide) for more info on how to run tests in your environment, otherwise. 
