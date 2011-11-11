@@ -328,7 +328,7 @@ Our test is a bit limited, we only choose one type we know to be a member of the
 
 	implicit def MyClassSemigroup[T : Semigroup]: Semigroup[MyClass[T]] = semigroup((a, b) => MyClass(a.a |+| b.a))
 
-The defintion limits the conversion to types `T` which are themselves a `Semigroup`. If we don't have a semigroup for a `T` then we cannot append two `MyClass[T]` instances. We see this because if we run our specification it fails. However, if we try to append two instances of `MyClass[(Int, Int) => Int]` we get a familiar error:
+The defintion limits the conversion to types `T` which are themselves a `Semigroup`. If we don't have a semigroup for a `T` then we cannot append two `MyClass[T]` instances. We see this because if we run our specification it succeeds. However, if we try to append two instances of `MyClass[(Int, Int) => Int]` we get a familiar error:
 
 	scala> MyClass(((a: Int, b: Int) => a).some) |+| MyClass(((a: Int, b: Int) => b).some)
 	<console>:20: error: could not find implicit value for parameter s: \
