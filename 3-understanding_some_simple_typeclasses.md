@@ -336,6 +336,29 @@ The defintion limits the conversion to types `T` which are themselves a `Semigro
               MyClass(((a: Int, b: Int) => a).some) |+| MyClass(((a: Int, b: Int) => b).some)
 
 
+## Putting it Together
+
+When we use type classes together their power becomes even more evident. In [this gist](https://gist.github.com/1342196) Jason Zaugg, one of the Scalaz committers, shows how we can make `Order[A]` a member of `Semigroup`. By doing so, we make it easy to build compound orderings from two `Order[A]`s. In the example, the `Person` class (shown below) is what we want to order.
+
+	case class Person(name: String, age: Int)
+
+We can easily define a way to order two `Person` instances by name or age using the `orderBy` convenience method given to us by Scalaz.
+
+	val byName = orderBy((_: Person).name)
+	val byAge = orderBy((_: Person).age)
+
+Using a `Semigroup[Order[A]]` we could append the two orderings so that we order first by age then by name. 
+
+	val byAgeThenName = byAge |+| byName
+	byAgeThenName.order(Person("bob", 12), Person("bob", 13)) // scalaz.Ordering = LT
+
+Let's take a look at how `Semigroup[Order[A]]` is defined:
+
+	implicit def OrderSemigroup[A]: Semigroup[Order[A]] = 
+		semigroup((o1, o2) => order((a1: A, a2: A) => o1.order(a1, a2) |+| o2.order(a1, a2)))
+
+The definition uses the fact that `Ordering` is also a semigroup. Because we are appending two `Order`s we should get another `Order` back, which is exactly what using the `order` convenience method does. `order` takes a function that returns an `Ordering` given two `A`s and uses the function to build an `Order[A]`. In this case the function we pass to `order` uses the first `Order[A]` operand (`o1`) passed to `|+|` to get the `Ordering` for the two `A`s, then appends it to the `Ordering` returned using the second `Order[A]` (`o2`).
+ 
 ## So That's The Basics
 
 We've now seen several of the simpler typeclasses and I hope some of their advantages are becoming clear. One thing that I hope is abundantly clear is that typeclasses are highly general. This is what makes them a bit hard to reason about at first, but its also why they are such a powerful construct. One example of this is how typeclasses improve Java-Scala interop. When working with Java collections, for example, we cannot use operators like `:::` without first importing `scala.collections.JavaConversions._`. Sometimes this boxing between Java and Scala types can be expensive and unnecessary -- often causing conversion when using the underlying Java type would really suffice if it were only possible to easily append two such objects. Java types can be members of type classes as well as long as they meet the type class' properties. `LinkedList`, `PriorityQueue` and `CopyOnWriteArrayList` are just a few of the Java types that are members of `Semigroup`. We can append these members using `|+|` without the conversion, which in some cases may not even exist. In later sections we will learn about other type classes that will allow us to do things like map and fold over types including Java ones. 
