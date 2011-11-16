@@ -110,17 +110,26 @@ Like we said above, Scala traits help us to define typeclasses. Before we talk a
 	 required: Int
               IntEqual.equal(1, "3")
 
-This time around there is no ambiguity to the type inferencer, we can't apply `IntEqual.equal` to an `Int` and a `String`; we get the compiler error we expect. `Equal`'s type paramter `A` is interesting and helps us do this. It is prefixed by a minus (`-`). In Scala this means that `A` is *contravariant*. This means if we have `A1` which is a subtype of `A2` then `Equal[A1]` is a supertype of `Equal[A2]`.
+This time around there is no ambiguity to the type inferencer, we can't apply `IntEqual.equal` to an `Int` and a `String`; we get the compiler error we expect. Imagine we define a subclass of `Int` called `RangedInt` that represents a subset of the integers represented by `Int`. It makes sense that we could pass one of these into `IntEqual.equal` because, since `RangedInt` is a subset of the domain of `Int`, we know that they can be compared for equality. However, we can't pass an `Any` to `IntEqual.equal` because it is a supertype of `Int`, and that's exactly what we're trying to prevent!
+
+The type parameter `A` is prefixed by a minus (`-`). In Scala this means that `A` is *contravariant*. This means if we have `A1` which is a subtype of `A2` then `Equal[A1]` is a supertype of `Equal[A2]`.
 
 ### A sidenote on Contravariance
 
-Often, contravariance is not initially as clear as its counterpart covariance. Why is `Equal[A2]` a subtype of `Equal[A1]` when `A2` is a supertype of `A1`? The answer lies in the one behavior defined on the `Equal` typeclass, `equal(a1: A, a2: A): Boolean`. 
+Often, contravariance is not initially as clear as its counterpart covariance. In the case of `Any` and `Int`, `Equal[Int]` is a supertype of `Equal[Any]` even though `Any` is a supertype of `Int`. `Equal[Any]` provides a broader set of functionality (the ability to compare any two Scala objects using our typesafe equals) than `Equal[Int]` does, the same way `Any` defines broader functionality than `Int`.
 
-The function takes two instances of `A` and returns a `Boolean` - what we expect from typesafe equals. Let's use that knowledge to explore why `A` is contravariant in this case. Imagine we define a subclass of `Int` called `RangedInt` that represents a subset of the integers represented by `Int`. It makes sense that we could pass one of these into `IntEqual.equal` because, since `RangedInt` is a subset of the domain of `Int`, we know that they can be compared for equality. However, we can't pass an `Any` to `IntEqual.equal` because it is a supertype of `Int`, and that's exactly what we're trying to prevent!
+Why is this helpful? Since `A` is contravariant, we can do something like this:
 
-So, `Equal[Int]` is a supertype of `Equal[Any]` even though `Any` is a supertype of `Int`. Now this makes more sense. `Equal[Any]` provides a broader set of functionality (the ability to compare any two Scala objects using our typesafe equals) than `Equal[Int]` does, the same way `Any` defines broader functionality than `Int`. 
+	val anyEqual: Equal[Any] = new Equal[Any] {
+		def equal(a1: Any, a2: Any): Boolean = a1 == a2
+	}
 
-Hint: `Equal[Any]` is not given to you by Scalaz because it isn't very useful and kind of defeats the purpose of the `Equal` typeclass. Scala's blend of OOP and FP is extremely powerful but it also lets you define useless things like `Equal[Any]` which you should not do. 
+	val intEqual: Equal[Int] = anyEqual
+	val stringEqual: Equal[String] = anyEqual
+
+So an `Equal[Any]` is-a `Equal[Int]` and can be used in all cases that an `Equal[Int]` could be used, since all `Int` values we could pass in are also `Any` value. If we had defined `Equal` to be invariant (i.e. `Equal[A]`), we wouldn't be able to do this since `Equal[Any]` wouldn't be a subtype. On the other hand, we couldn't use an `Equal[RangedInt]` here (i.e. covariance) because it wouldn't know what to do with input values that exist in `Int` but not in `RangedInt`.
+
+> Hint: `Equal[Any]` is not given to you by Scalaz because it isn't very useful and kind of defeats the purpose of the `Equal` typeclass. Scala's blend of OOP and FP is extremely powerful but it also lets you define useless things like `Equal[Any]` which you should not do. 
 
 So the `Equal` typeclass sounds pretty good. It gives us a very powerful & safe typesafe `equal` function. But we're not home yet. It's not exactly clear how we get instances of `Equal`. Scalaz includes `Int` and many other types in the `Equal` typeclass, but how do we really use this stuff? Also, `equal` still can't be used like an operator. Before we get to see the whole picture we need to learn how to Pimp our Scala. 
 
