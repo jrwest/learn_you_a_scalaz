@@ -226,7 +226,7 @@ You can append many other types inlcuding `List`, `Boolean`, `Tuple2`and `Either
 	scala> List(MyClass(1), MyClass(2)) |+| List(MyClass(3))
 	res5: List[MyClass] = List(MyClass(1), MyClass(2), MyClass(3))
 
-We'll talk about tuples soon, but first let's try appending two `Either`s. When we append two `Either`s, we actually are appeneding either its left projection or its right projection. Scala gives us the `left` and `right` methods on `Either` to get these projections. Scalaz also gives us the convience `left` and `right` methods on all types via `Identity`. When we append two `Either.LeftProjection`s if the first operand is `Left` we return it, if not we return the second operand regardless of whether its a `Left` or `Right`. The same holds for `Either.RightProjection` and `Right`.
+We'll talk about tuples soon, but first let's try appending two `Either`s. When we append two `Either`s, we actually are appending either its left projection or its right projection. Scala gives us the `left` and `right` methods on `Either` to get these projections. Scalaz also gives us the convenience `left` and `right` methods on all types via `Identity`. When we append two `Either.LeftProjection`s if the first operand is `Left` we return it, if not we return the second operand regardless of whether its a `Left` or `Right`. The same holds for `Either.RightProjection` and `Right`.
 
 	scala> 1.left.left |+| 2.left.left
 	res1: Either.LeftProjection[Int,Nothing] = LeftProjection(Left(1))
@@ -280,7 +280,7 @@ We've now seen `Semigroup` and its append do some pretty cool things. It's let u
 
 Scalaz defines tuple members of `Semigroup` for sizes two to four. You can define more if you really want.
 
-I think its much more interesting to define our own member of Semigroup. Before we do, we need a way to prove that our member meets the rules to be a member. Technically, we can make anything a member of Scalaz's `Semigroup` typeclass, but that doesn't actually make it a semigroup. To check the closure condition we will cheat a bit and rely on the type system and the defintion of append. To check associativity we're going to use two awesome Scala testing libraries that work even better together, [Specs2](http://etorreborre.github.com/specs2/) & [ScalaCheck](http://code.google.com/p/scalacheck/). We'll start with a simple shell of the specification.
+I think its much more interesting to define our own member of Semigroup. Before we do, we need a way to prove that our member meets the rules to be a member. Technically, we can make anything a member of Scalaz's `Semigroup` typeclass, but that doesn't actually make it a semigroup. To check the closure condition we will cheat a bit and rely on the type system and the definition of append. To check associativity we're going to use two awesome Scala testing libraries that work even better together, [Specs2](http://etorreborre.github.com/specs2/) & [ScalaCheck](http://code.google.com/p/scalacheck/). We'll start with a simple shell of the specification.
 
 	class SemigroupSpec extends Specification with ScalaCheck { def is = 
 	
@@ -328,7 +328,7 @@ Our test is a bit limited, we only choose one type we know to be a member of the
 
 	implicit def MyClassSemigroup[T : Semigroup]: Semigroup[MyClass[T]] = semigroup((a, b) => MyClass(a.a |+| b.a))
 
-The defintion limits the conversion to types `T` which are themselves a `Semigroup`. If we don't have a semigroup for a `T` then we cannot append two `MyClass[T]` instances. We see this because if we run our specification it succeeds. However, if we try to append two instances of `MyClass[(Int, Int) => Int]` we get a familiar error:
+The definition limits the conversion to types `T` which are themselves a `Semigroup`. If we don't have a semigroup for a `T` then we cannot append two `MyClass[T]` instances. We see this because if we run our specification it succeeds. However, if we try to append two instances of `MyClass[(Int, Int) => Int]` we get a familiar error:
 
 	scala> MyClass(((a: Int, b: Int) => a).some) |+| MyClass(((a: Int, b: Int) => b).some)
 	<console>:20: error: could not find implicit value for parameter s: \
@@ -364,7 +364,7 @@ The definition uses the fact that `Ordering` is also a semigroup. Because we are
 We've now seen several of the simpler typeclasses and I hope some of their advantages are becoming clear. One thing that I hope is abundantly clear is that typeclasses are highly general. This is what makes them a bit hard to reason about at first, but its also why they are such a powerful construct. One example of this is how typeclasses improve Java-Scala interop. When working with Java collections, for example, we cannot use operators like `:::` without first importing `scala.collections.JavaConversions._`. Sometimes this boxing between Java and Scala types can be expensive and unnecessary -- often causing conversion when using the underlying Java type would really suffice if it were only possible to easily append two such objects. Java types can be members of type classes as well as long as they meet the type class' properties. `LinkedList`, `PriorityQueue` and `CopyOnWriteArrayList` are just a few of the Java types that are members of `Semigroup`. We can append these members using `|+|` without the conversion, which in some cases may not even exist. In later sections we will learn about other type classes that will allow us to do things like map and fold over types including Java ones. 
 
 
-<sup>1</sup> In mathematics, Semigroups are actually a much more general concept. We are talking about their use in Scalaz so we will not cover it that in depth but you may find it interesting to start with the ever so general defintion on [Wikipedia](http://en.wikipedia.org/wiki/Semigroup).
+<sup>1</sup> In mathematics, Semigroups are actually a much more general concept. We are talking about their use in Scalaz so we will not cover it that in depth but you may find it interesting to start with the ever so general definition on [Wikipedia](http://en.wikipedia.org/wiki/Semigroup).
 
 <sup>2</sup> In reality, Scalaz does not define a `Semigroup[List]` for us, but a more general one on things that are traversable. You can get the nitty gritty by reading the [implementation](https://github.com/scalaz/scalaz/blob/master/core/src/main/scala/scalaz/Semigroup.scala).
 
