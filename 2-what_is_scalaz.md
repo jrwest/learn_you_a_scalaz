@@ -31,10 +31,11 @@ In classic Object Oriented Programming we use a class hierarchy to organize rela
 	res1: Boolean = false
 
 The truth is its not Scala's fault that `==` works this way. Its a product of the JVM it runs on. Scala does its best to tell you at compile time that you're most likely doing something you didnt mean to. 
-
+```
 > Warning: comparing values of types Int and java.lang.String using `==' will always yield false
               1 == "1"
                 ^
+```
 The warning is a nice helper but typesafe compilers are even more helpful when they give us compiler errors when we are about to do something wrong. The problem is we can't make `==` typesafe because it is defined on `Any`. <sup>3</sup> Many times in our own classes we handle this with something like
 
 	class A {
